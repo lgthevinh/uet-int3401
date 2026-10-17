@@ -15,7 +15,7 @@ Hiểu rõ bài toán của project 5 và bắt đầu report.
 - Thống nhất output của bài toán để viết phần mô tả bài toán.
 
 **Output cuối sprint:**
-- Mỗi question có một file riêng `docs/report/sections/qN_<tên>.tex` theo format trên, khoảng 1/2 trang.
+- Mỗi question có một file riêng `docs/report/qN_<tên>.tex` theo format trên, khoảng 1/2 trang.
 - `final_report.tex` có bản nháp: thông tin sinh viên, giới thiệu tổng quan (các vấn đề và các neural network trong project 5), mô tả bài toán.
 
 ## Backlog
