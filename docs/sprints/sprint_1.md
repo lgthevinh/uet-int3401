@@ -22,11 +22,11 @@ Hiểu rõ bài toán của project 5 và bắt đầu report.
 
 | Task | Nội dung | Output | Owner |
 | ---- | -------- | ------ | ----- |
-| Q1 Perceptron | Linear classifier, dot product score, sign decision rule, update rule `w += y * x`, hội tụ trên dữ liệu linearly separable | `q1_perceptron.tex` | Vinh |
-| Q2 Regression | Feed-forward network, hidden layer, ReLU, MSE loss, gradient descent, batching, learning rate | `q2_regression.tex` | Vinh |
-| Q3 MNIST digit classification | Multi-class classification, logits, softmax + cross-entropy, epoch, train vs test accuracy, overfitting | `q3_digit_classification.tex` | Khang |
-| Q4 Language identification (RNN) | RNN, hidden state qua từng ký tự, shared weights theo thời gian, input độ dài thay đổi, one-hot encoding ký tự | `q4_language_id.tex` | Khang |
-| Q5 Convolution | 2D convolution (sliding window), kernel/filter, kích thước output `(H − kH + 1) × (W − kW + 1)`, feature map → dense classifier | `q5_convolution.tex` | Đức |
+| Q1 Perceptron | Linear classifier, dot product score, sign decision rule, update rule `w += y * x`, hội tụ trên dữ liệu linearly separable | `q1_perceptron.tex` | Khang |
+| Q2 Regression | Feed-forward network, hidden layer, ReLU, MSE loss, gradient descent, batching, learning rate | `q2_regression.tex` | Khang |
+| Q3 MNIST digit classification | Multi-class classification, logits, softmax + cross-entropy, epoch, train vs test accuracy, overfitting | `q3_digit_classification.tex` | Vinh |
+| Q5 Convolution | 2D convolution (sliding window), kernel/filter, kích thước output `(H − kH + 1) × (W − kW + 1)`, feature map → dense classifier | `q5_convolution.tex` | Vinh |
+| Q4 Language identification (RNN) | RNN, hidden state qua từng ký tự, shared weights theo thời gian, input độ dài thay đổi, one-hot encoding ký tự | `q4_language_id.tex` | Đức |
 | Q6 Causal self-attention | Query/key/value, scaled dot product `QKᵀ / √d`, causal mask (lower-triangular), softmax | `q6_attention.tex` | Đức |
 | Report: thông tin sinh viên | Tên nhóm, họ tên, MSSV, email các thành viên | `final_report.tex` (phần author) | Vinh |
 | Report: giới thiệu tổng quan | Project 5 giải quyết vấn đề gì, tóm tắt các neural network (perceptron → feed-forward → RNN → CNN → attention) | `final_report.tex` (Giới thiệu) | Vinh |
