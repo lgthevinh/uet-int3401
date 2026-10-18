@@ -39,9 +39,13 @@ class PerceptronModel(Module):
 
         Hint: You can use ones(dim) to create a tensor of dimension dim.
         """
+        
         super(PerceptronModel, self).__init__()
-
         "*** YOUR CODE HERE ***"
+        
+        # create weight_vector, 1 * dims of the data
+        weight_vector = ones(1, dimensions)
+        self.w = Parameter(weight_vector)
 
 
     def get_weights(self):
@@ -62,6 +66,9 @@ class PerceptronModel(Module):
         """
         "*** YOUR CODE HERE ***"
 
+        dp = tensordot(self.w, x)
+        return dp
+
         
 
     def get_prediction(self, x):
@@ -73,8 +80,11 @@ class PerceptronModel(Module):
         score = self(x)
 
         "*** YOUR CODE HERE ***"
-
-
+        # implement step function, return -1 if negative, 1 vice versa
+        if score >= 0:
+            return 1
+        else:
+            return -1
 
 class RegressionModel(Module):
     """

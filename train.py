@@ -32,6 +32,44 @@ def train_perceptron(model, dataset):
         dataloader = DataLoader(dataset, batch_size=1, shuffle=True)
         "*** YOUR CODE HERE ***"
 
+        # debug print the instance of data, limit to 5
+        # count = 0
+        # for data in dataloader:
+        #     if count <= 5:
+        #         count+=1
+        #         print(data)
+        #     else:
+        #         break
+
+        # inter the loop and update the weight
+        # train the model until the coverage is pass (here is 100% accuracy)
+        while True:
+            mistake = 0
+
+            for data in dataloader:
+                pred = model.get_prediction(data['x'])
+                learning_rate = 0.5
+
+                error = data['label'] - pred
+
+                if error != 0:
+                    mistake += 1
+                    # must *data['x'] because, x give the gradient
+                    model.w += error * data['x'] * learning_rate
+
+                    # debug 
+                    # print("y_pred=", pred)
+                    # print("y-y_pred=", error)
+                    # print("weight=", model.w)
+
+            if mistake == 0:
+                break
+            else:
+                print("model_acc= ", 1-(mistake/len(dataloader)))
+
+            
+
+
 
 def train_regression(model, dataset):
     """
