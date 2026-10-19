@@ -97,7 +97,10 @@ class RegressionModel(Module):
         # Initialize your model parameters here
         "*** YOUR CODE HERE ***"
         super().__init__()
-   
+
+        # init layers with Linear (already with weight and bias)
+        self.l1 = Linear(1, 100)
+        self.l2 = Linear(100, 1)
 
     def forward(self, x):
         """
@@ -109,6 +112,12 @@ class RegressionModel(Module):
             A node with shape (batch_size x 1) containing predicted y-values
         """
         "*** YOUR CODE HERE ***"
+        o_l1 = self.l1(x)
+        activated_l1 = relu(o_l1)
+
+        o_l2 = self.l2(activated_l1)
+
+        return o_l2
 
 
 class DigitClassificationModel(Module):

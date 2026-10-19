@@ -88,6 +88,40 @@ def train_regression(model, dataset):
     """
     "*** YOUR CODE HERE ***"
 
+    # print(len(dataset)) 200
+
+    # this is the best hyper params that reach the loss of 0.02 fastest (least iters)
+    learning_rate = 0.01 # 0.00001 0.0005 0.0015 0.004
+    batch_size = 10 # 100, 5
+    epochs = 500 # 100, 1000
+
+    dataloader = DataLoader(dataset=dataset, batch_size=batch_size)
+
+    # debug print the instance of batch, limit to 5
+    # count = 0
+    # for batch in dataloader:
+    #     if count <= 5:
+    #         count+=1
+    #         print("batch=", batch)
+    #     else:
+    #         break
+
+    optimizer = optim.SGD(model.parameters(), learning_rate)
+
+    for _ in range (1, epochs): 
+        for batch in dataloader:
+            y_pred = model(batch['x'])
+            loss = regression_loss(y_pred, batch['label'])
+
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+            # print("y_pred, y= {} {}", y_pred, batch['label'])
+        
+        # debug print loss fl
+        # print(loss)
+
 
 def train_digitclassifier(model, dataset):
     """

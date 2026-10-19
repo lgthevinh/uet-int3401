@@ -17,6 +17,8 @@ VD: Dự đoán khách hàng có mua xe không?
 
 => công thức: z = sum(wi*x1) + b (output)
 
+### Gradient descent, batch, iterations, epochs
+
 #### Hàm kích hoạt
 - Hàm kích hoạt (activition function): Khi mô hình tính toán, nó trả kết quả về là 1 số thực (z). Hàm kích hoạt là hàm lấy giá trị z này đưa về miền giá trị đã xác định.
     - VD: model ảnh -> z, f(z) -> Chó/Mèo
