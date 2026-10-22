@@ -1,8 +1,145 @@
-% Owner: Khang
-\subsection{Q1: Perceptron}
+\documentclass[11pt, a4paper]{article}
+\usepackage[a4paper, margin=2.2cm]{geometry}
+\usepackage{fontspec}
+\usepackage[vietnamese, english, bidi=basic, provide=*]{babel}
+\babelprovide[import, onchar=ids fonts]{vietnamese}
+\babelfont{rm}{Noto Sans}
+\usepackage{amsmath, amssymb}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{mdframed}
+\usepackage{hyperref}
 
-% Kiến thức sử dụng
+\definecolor{primary}{RGB}{30, 64, 175}
+\definecolor{secondary}{RGB}{15, 118, 110}
+\definecolor{bgcode}{RGB}{248, 250, 252}
+\definecolor{bordercode}{RGB}{203, 213, 225}
 
-% Vấn đề giải quyết, ứng dụng
+\hypersetup{
+    colorlinks=true,
+    linkcolor=primary,
+    urlcolor=primary
+}
 
-% Implement, công thức (optional)
+\mdfdefinestyle{codeblock}{
+    backgroundcolor=bgcode,
+    linecolor=bordercode,
+    linewidth=1pt,
+    topline=true,
+    bottomline=true,
+    leftline=true,
+    rightline=true,
+    innerleftmargin=10pt,
+    innerrightmargin=10pt,
+    innertopmargin=8pt,
+    innerbottommargin=8pt
+}
+
+\title{\textbf{\Large BÁO CÁO CHI TIẾT QUESTION 1: PERCEPTRON}\\[0.3em]
+\large Project 5: Machine Learning --- CS 188 (Fall 2025)}
+\author{\textbf{Trí tuệ nhân tạo | UET}}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{Tổng quan về Question 1}
+Trong \textbf{Project 5: Machine Learning} của khóa học CS 188 (Fall 2025), \textbf{Question 1} yêu cầu người học cài đặt mô hình \textbf{PerceptronModel} trong tệp \texttt{models.py}. Đây là bước khởi đầu để nắm vững thuật toán phân loại tuyến tính nhị phân (binary linear classification), tạo tiền đề vững chắc cho các mô hình mạng nơ-ron phức tạp hơn ở các câu hỏi sau.
+
+\section{Kiến thức sử dụng (What Knowledge is Used?)}
+Để thực hiện thành công Question 1, người học cần áp dụng các khối kiến thức sau:
+\begin{itemize}[itemsep=4pt]
+    \item \textbf{Đại số tuyến tính (Linear Algebra):}
+    \begin{itemize}
+        \item Phép tích vô hướng (Dot Product / Inner Product) giữa hai vector: vector trọng số $w$ và vector đặc trưng đầu vào $x$.
+        \item Biểu diễn dữ liệu dưới dạng ma trận và tensor trong PyTorch.
+    \end{itemize}
+    \item \textbf{Thuật toán Học có giám sát (Supervised Learning - Perceptron Algorithm):}
+    \begin{itemize}
+        \item Nguyên lý phân loại bằng siêu phẳng tuyến tính (linear hyperplane decision boundary).
+        \item Hàm kích hoạt dạng bước (Step Activation Function / Sign function).
+        \item Quy tắc cập nhật trọng số dựa trên sai số (Error-driven Online Update Rule).
+    \end{itemize}
+    \item \textbf{Lập trình PyTorch / Tensor Operations:}
+    \begin{itemize}
+        \item Khởi tạo và quản lý đối tượng tham số học được (\texttt{nn.Parameter}).
+        \item Duyệt qua tập dữ liệu theo chu kỳ (epochs / data iterators) và thực hiện tính toán vector hóa mà không dùng vòng lặp thủ công trên từng chiều đặc trưng.
+    \end{itemize}
+\end{itemize}
+
+\section{Bài toán giải quyết \& Ứng dụng thực tế}
+
+\subsection{Bài toán giải quyết}
+Perceptron giải quyết bài toán \textbf{Phân loại nhị phân (Binary Classification)}: Cho trước tập các điểm dữ liệu $x \in \mathbb{R}^d$ cùng nhãn mục tiêu tương ứng $y \in \{-1, +1\}$, mục tiêu là tìm ra một vector trọng số $w \in \mathbb{R}^1 \times d$ sao cho siêu phẳng $w \cdot x = 0$ phân chia hoàn toàn hai lớp dữ liệu.
+
+\subsection{Ứng dụng thực tế}
+Dù là mô hình học máy sơ khai nhất, tư duy của Perceptron được áp dụng rộng rãi trong thực tiễn:
+\begin{itemize}[itemsep=3pt]
+    \item \textbf{Lọc Email Rác (Spam Filtering):} Phân loại email thành ``Spam'' (+1) hoặc ``Not Spam'' (-1) dựa trên tần suất xuất hiện của các từ khóa.
+    \item \textbf{Chẩn đoán Y khoa cơ bản:} Phân loại bệnh nhân có nguy cơ mắc bệnh (+1) hay bình thường (-1) dựa trên các chỉ số sinh hóa (huyết áp, lượng đường trong máu,...).
+    \item \textbf{Chế tạo Cổng Logic và Nơ-ron Nhân tạo (Biological Neuron Modeling):} Mô phỏng cơ chế kích hoạt ``Bật/Tắt'' (Fire/Not Fire) của nơ-ron sinh học trong vỏ não.
+\end{itemize}
+
+\section{Công thức toán học \& Quy trình Cài đặt (Implementation)}
+
+\subsection{1. Hàm Dự đoán (Forward Pass / Prediction)}
+Cho đầu vào $x$ (kích thước $1 \times d$, đã gộp giá trị bias), giá trị dự đoán được tính như sau:
+\begin{equation}
+f(x) = w \cdot x^T = \sum_{i=1}^{d} w_i x_i
+\end{equation}
+Nhãn dự đoán nhị phân $\hat{y} \in \{-1, +1\}$ được xác định bởi hàm dấu:
+\begin{equation}
+\hat{y} = \text{get\_prediction}(x) = 
+\begin{cases} 
++1 & \text{nếu } w \cdot x^T \ge 0 \\
+-1 & \text{nếu } w \cdot x^T < 0 
+\end{cases}
+\end{equation}
+
+\subsection{2. Quy tắc Cập nhật Trọng số (Perceptron Update Rule)}
+Duyệt qua từng mẫu dữ liệu $(x, y)$. Nếu mô hình dự đoán sai ($\hat{y} \neq y$), trọng số $w$ sẽ được cập nhật trực tiếp theo hướng của $x$:
+\begin{equation}
+w^{(new)} \leftarrow w^{(old)} + y \cdot x
+\end{equation}
+\textit{Diễn giải:}
+\begin{itemize}[itemsep=2pt]
+    \item Nếu $y = +1$ nhưng dự đoán $\hat{y} = -1$: $w^{(new)} = w^{(old)} + x$ (kéo góc giữa $w$ và $x$ lại gần nhau hơn để tăng tích vô hướng).
+    \item Nếu $y = -1$ nhưng dự đoán $\hat{y} = +1$: $w^{(new)} = w^{(old)} - x$ (đẩy $w$ ra xa $x$ để giảm tích vô hướng).
+\end{itemize}
+
+\subsection{3. Cấu trúc hàm cần cài đặt trong \texttt{models.py}}
+Trong bài tập CS 188, người học cần hoàn thiện 4 phương thức chính của lớp \texttt{PerceptronModel}:
+\begin{enumerate}[itemsep=3pt]
+    \item \texttt{\_\_init\_\_(self, dimensions)}: Khởi tạo trọng số \texttt{self.w = nn.Parameter(1, dimensions)}.
+    \item \texttt{run(self, x)}: Trả về kết quả tích vô hướng giữa \texttt{x} và \texttt{self.w}.
+    \item \texttt{get\_prediction(self, x)}: Trả về $+1$ hoặc $-1$ dựa trên giá trị của \texttt{run(self, x)}.
+    \item \texttt{train(self, dataset)}: Lặp qua tập dữ liệu cho đến khi độ chính xác trên toàn bộ tập huấn luyện đạt 100\% (không còn mẫu nào bị phân loại sai trong một epoch đầy đủ).
+\end{enumerate}
+
+\section{Thống nhất Output \& Mô tả Bài toán (Problem Statement)}
+
+\begin{mdframed}[style=codeblock]
+\textbf{MÔ TẢ BÀI TOÁN CHUẨN ĐỂ ĐƯA VÀO BÁO CÁO / ĐỀ BÀI}
+
+\textbf{Tên bài toán:} Phân loại Tuyến tính Nhị phân bằng Mô hình Perceptron (\texttt{PerceptronModel}).
+
+\textbf{Đầu vào (Inputs):}
+\begin{itemize}[itemsep=2pt]
+    \item Tập dữ liệu huấn luyện \texttt{dataset} chứa các cặp $(x, y)$.
+    \item $x$: Tensor đặc trưng đầu vào kích thước $(1 \times d)$, trong đó đã bao gồm thành phần bias.
+    \item $y$: Tensor nhãn thực tế mang giá trị nhị phân thuộc $\{-1, +1\}$.
+\end{itemize}
+
+\textbf{Đầu ra (Outputs):}
+\begin{itemize}[itemsep=2pt]
+    \item Phương thức \texttt{run(self, x)}: Trả về một Tensor kích thước $(1 \times 1)$ đại diện cho giá trị điểm số tích vô hướng $w \cdot x^T$.
+    \item Phương thức \texttt{get\_prediction(self, x)}: Trả về số nguyên $1$ (nếu tích vô hướng $\ge 0$) hoặc $-1$ (nếu tích vô hướng $< 0$).
+    \item Phương thức \texttt{train(self, dataset)}: Một mô hình đã được huấn luyện hoàn chỉnh với bộ trọng số $w$ đã hội tụ, đảm bảo phân loại đúng 100\% các điểm dữ liệu trong tập huấn luyện tuyến tính phân tách được (linearly separable dataset).
+\end{itemize}
+\end{mdframed}
+
+\section{Kết luận}
+Question 1 cung cấp cho người học hiểu biết sâu sắc về thuật toán học máy kinh điển nhất. Mặc dù hạn chế của Perceptron là chỉ giải quyết được các tập dữ liệu phân tách tuyến tính, việc nắm vững cơ chế cập nhật trọng số và tích vô hướng là bước chuẩn bị bắt buộc trước khi chuyển sang các mạng nơ-ron phi tuyến ở Question 2 và Question 3.
+
+\end{document}

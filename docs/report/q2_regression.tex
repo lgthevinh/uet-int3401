@@ -1,8 +1,141 @@
-% Owner: Khang
-\subsection{Q2: Regression}
+\documentclass[11pt, a4paper]{article}
+\usepackage[a4paper, margin=2.2cm]{geometry}
+\usepackage{fontspec}
+\usepackage[vietnamese, english, bidi=basic, provide=*]{babel}
+\babelprovide[import, onchar=ids fonts]{vietnamese}
+\babelfont{rm}{Noto Sans}
+\usepackage{amsmath, amssymb}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{mdframed}
+\usepackage{hyperref}
 
-% Kiến thức sử dụng
+\definecolor{primary}{RGB}{30, 64, 175}
+\definecolor{secondary}{RGB}{15, 118, 110}
+\definecolor{bgcode}{RGB}{248, 250, 252}
+\definecolor{bordercode}{RGB}{203, 213, 225}
 
-% Vấn đề giải quyết, ứng dụng
+\hypersetup{
+    colorlinks=true,
+    linkcolor=primary,
+    urlcolor=primary
+}
 
-% Implement, công thức (optional)
+\mdfdefinestyle{codeblock}{
+    backgroundcolor=bgcode,
+    linecolor=bordercode,
+    linewidth=1pt,
+    topline=true,
+    bottomline=true,
+    leftline=true,
+    rightline=true,
+    innerleftmargin=10pt,
+    innerrightmargin=10pt,
+    innertopmargin=8pt,
+    innerbottommargin=8pt
+}
+
+\title{\textbf{\Large BÁO CÁO CHI TIẾT QUESTION 2: NON-LINEAR REGRESSION}\\[0.3em]
+\large Project 5: Machine Learning --- CS 188 (Fall 2025)}
+\author{\textbf{Trí tuệ nhân tạo | UET}}
+
+\begin{document}
+\maketitle
+
+\section{Tổng quan về Question 2}
+Trong \textbf{Question 2: Non-linear Regression} của Project 5 (CS 188 Fall 2025), mục tiêu là chuyển từ mô hình tuyến tính đơn giản (Perceptron ở Question 1) sang xây dựng một \textbf{Mạng nơ-ron truyền thẳng (Feed-Forward Neural Network)} nhằm xấp xỉ một hàm số phi tuyến tính $y = f(x)$ (chẳng hạn như hàm $y = \sin(x)$) trên miền dữ liệu liên tục.
+
+\section{Kiến thức sử dụng (What Knowledge is Used?)}
+Để giải quyết Question 2, người học cần áp dụng các khối kiến thức sau:
+
+\begin{itemize}[itemsep=4pt]
+    \item \textbf{Mạng nơ-ron truyền thẳng (Multilayer Perceptron / Feed-forward Neural Network):}
+    \begin{itemize}
+        \item Cấu trúc lớp ẩn (Hidden Layers) và ma trận trọng số $W_i$, vector bias $b_i$.
+        \item Biến đổi tuyến tính nối tiếp: $h(x) = x W_1 + b_1$.
+    \end{itemize}
+    \item \textbf{Hàm kích hoạt phi tuyến tính (Non-linear Activation Functions):}
+    \begin{itemize}
+        \item Hàm **ReLU** (Rectified Linear Unit): $\text{ReLU}(z) = \max(0, z)$.
+        \item Định lý xấp xỉ vạn năng (Universal Approximation Theorem): Mạng nơ-ron có ít nhất một lớp ẩn với hàm kích hoạt phi tuyến có khả năng xấp xỉ bất kỳ hàm liên tục nào.
+    \end{itemize}
+    \item \textbf{Giải thuật Tối ưu hóa \& Lan truyền ngược (Backpropagation \& Optimization):}
+    \begin{itemize}
+        \item Hàm mất mát bình phương trung bình (Mean Squared Error / Square Loss): $L = \frac{1}{2} \| y - \hat{y} \|^2$.
+        \item Tự động tính gradient (Automatic Differentiation) bằng PyTorch engine.
+        \item Thuật toán Hạ độ dốc ngẫu nhiên (Stochastic Gradient Descent - SGD) hoặc Adam Optimizer để cập nhật trọng số.
+    \end{itemize}
+\end{itemize}
+
+\section{Bài toán giải quyết \& Ứng dụng thực tế}
+
+\subsection{Bài toán giải quyết}
+Hầu hết các dữ liệu trong tự nhiên và kinh tế không có mối quan hệ đường thẳng tuyến tính. Question 2 giải quyết bài toán \textbf{Hồi quy Phi tuyến (Non-linear Regression)}: Tìm một hàm ước lượng $\hat{f}(x; \theta)$ tham số hóa bởi $\theta = \{W_1, b_1, W_2, b_2, \dots\}$ sao cho sai số $L(y, \hat{y}) < \epsilon$ (với $\epsilon$ là ngưỡng chỉ định của autograder, thường là $L < 0.02$).
+
+\subsection{Ứng dụng thực tế}
+\begin{itemize}[itemsep=3pt]
+    \item \textbf{Dự báo chuỗi thời gian (Time-series Forecasting):} Dự đoán giá cổ phiếu, lượng mưa, hoặc nhiệt độ dựa trên xu hướng phi tuyến phức tạp.
+    \item \textbf{Điều khiển tự động \& Robot (Robotics \& Control):} Mô phỏng quỹ đạo chuyển động phi tuyến của cánh tay robot hoặc xe tự lái.
+    \item \textbf{Kinh tế lượng \& Tài chính (Financial Modeling):} Ước tính các hàm cầu, định giá quyền chọn (options pricing) trong thị trường tài chính.
+\end{itemize}
+
+\section{Công thức toán học \& Quy trình Cài đặt (Implementation)}
+
+\subsection{1. Kiến trúc Mô hình 2 lớp (2-layer Network Architecture)}
+Mô hình đơn giản nhất để đạt điểm tối đa ở Q2 sử dụng 1 lớp ẩn (Hidden Layer) với $H$ nơ-ron (ví dụ $H = 64$ hoặc $128$):
+\begin{align}
+h_1 &= \text{ReLU}(x W_1 + b_1) \\
+\hat{y} &= h_1 W_2 + b_2
+\end{align}
+Trong đó:
+\begin{itemize}[itemsep=2pt]
+    \item $x \in \mathbb{R}^{B \times 1}$ (với $B$ là batch size).
+    \item $W_1 \in \mathbb{R}^{1 \times H}$, $b_1 \in \mathbb{R}^{1 \times H}$.
+    \item $W_2 \in \mathbb{R}^{H \times 1}$, $b_2 \in \mathbb{R}^{1 \times 1}$.
+\end{itemize}
+
+\subsection{2. Hàm Mất mát \& Tối ưu hóa (Loss \& Optimization)}
+Sử dụng hàm mất mát Square Loss:
+\begin{equation}
+\mathcal{L}(W_1, b_1, W_2, b_2) = \frac{1}{2 B} \sum_{i=1}^{B} \left( y_i - \hat{y}_i \right)^2
+\end{equation}
+Cập nhật trọng số theo thuật toán Hạ độ dốc (Gradient Descent) với tốc độ học $\alpha$ (learning rate):
+\begin{equation}
+\theta^{(t+1)} \leftarrow \theta^{(t)} - \alpha \nabla_{\theta} \mathcal{L}
+\end{equation}
+
+\subsection{3. Cấu trúc Lớp \texttt{RegressionModel} trong \texttt{models.py}}
+\begin{enumerate}[itemsep=3pt]
+    \item \texttt{\_\_init\_\_(self)}: Khai báo các trọng số \texttt{nn.Parameter} ($W_1, b_1, W_2, b_2$) hoặc sử dụng \texttt{nn.Sequential} / \texttt{nn.Linear}.
+    \item \texttt{run(self, x)}: Tính toán lan truyền tiến (forward pass) nhận vào $x$ và trả về $\hat{y}$.
+    \item \texttt{get\_loss(self, x, y)}: Tính giá trị loss giữa dự đoán \texttt{run(x)} và nhãn thực tế $y$.
+    \item \texttt{train(self, dataset)}: Lặp qua các mini-batch của \texttt{dataset}, tính gradient qua lan truyền ngược và cập nhật trọng số cho đến khi tổng loss trên toàn bộ tập dữ liệu nhỏ hơn ngưỡng quy định (VD: $0.02$).
+\end{enumerate}
+
+\section{Thống nhất Output \& Mô tả Bài toán (Problem Statement)}
+
+\begin{mdframed}[style=codeblock]
+\textbf{MÔ TẢ BÀI TOÁN CHUẨN ĐỂ ĐƯA VÀO BÁO CÁO / ĐỀ BÀI}
+
+\textbf{Tên bài toán:} Hồi quy Phi tuyến tính bằng Mạng Nơ-ron Truyền thẳng (\texttt{RegressionModel}).
+
+\textbf{Đầu vào (Inputs):}
+\begin{itemize}[itemsep=2pt]
+    \item Tập dữ liệu huấn luyện \texttt{dataset} cung cấp dữ liệu liên tục dưới dạng các mini-batch.
+    \item $x$: Tensor đặc trưng đầu vào có kích thước $(B \times 1)$, trong đó $B$ là batch size.
+    \item $y$: Tensor giá trị thực tế mục tiêu tương ứng có kích thước $(B \times 1)$.
+\end{itemize}
+
+\textbf{Đầu ra (Outputs):}
+\begin{itemize}[itemsep=2pt]
+    \item Phương thức \texttt{run(self, x)}: Trả về Tensor dự đoán $\hat{y}$ kích thước $(B \times 1)$.
+    \item Phương thức \texttt{get\_loss(self, x, y)}: Trả về một Tensor vô hướng (scalar tensor) chứa giá trị loss $\mathcal{L}$.
+    \item Phương thức \texttt{train(self, dataset)}: Quá trình huấn luyện cập nhật tham số $\theta$ sao cho mất mát trung bình đạt tiêu chuẩn thử nghiệm ($\mathcal{L} \le 0.02$).
+\end{itemize}
+\end{mdframed}
+
+\section{Kết luận}
+Question 2 đánh dấu bước chuyển mình quan trọng từ các mô hình tuyến tính cổ điển sang mạng nơ-ron sâu (Deep Learning). Việc hiểu rõ vai trò của hàm kích hoạt phi tuyến tính (ReLU) cùng quy trình tính toán loss/backpropagation ở câu hỏi này là nền tảng trực tiếp để thực hiện bài toán phân loại chữ số MNIST ở Question 3.
+
+\end{document}
