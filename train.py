@@ -32,6 +32,44 @@ def train_perceptron(model, dataset):
         dataloader = DataLoader(dataset, batch_size=1, shuffle=True)
         "*** YOUR CODE HERE ***"
 
+        # debug print the instance of data, limit to 5
+        # count = 0
+        # for data in dataloader:
+        #     if count <= 5:
+        #         count+=1
+        #         print(data)
+        #     else:
+        #         break
+
+        # inter the loop and update the weight
+        # train the model until the coverage is pass (here is 100% accuracy)
+        while True:
+            mistake = 0
+
+            for data in dataloader:
+                pred = model.get_prediction(data['x'])
+                learning_rate = 0.5
+
+                error = data['label'] - pred
+
+                if error != 0:
+                    mistake += 1
+                    # must *data['x'] because, x give the gradient
+                    model.w += error * data['x'] * learning_rate
+
+                    # debug 
+                    # print("y_pred=", pred)
+                    # print("y-y_pred=", error)
+                    # print("weight=", model.w)
+
+            if mistake == 0:
+                break
+            else:
+                print("model_acc= ", 1-(mistake/len(dataloader)))
+
+            
+
+
 
 def train_regression(model, dataset):
     """
@@ -50,6 +88,40 @@ def train_regression(model, dataset):
     """
     "*** YOUR CODE HERE ***"
 
+    # print(len(dataset)) 200
+
+    # this is the best hyper params that reach the loss of 0.02 fastest (least iters)
+    learning_rate = 0.01 # 0.00001 0.0005 0.0015 0.004
+    batch_size = 10 # 100, 5
+    epochs = 500 # 100, 1000
+
+    dataloader = DataLoader(dataset=dataset, batch_size=batch_size)
+
+    # debug print the instance of batch, limit to 5
+    # count = 0
+    # for batch in dataloader:
+    #     if count <= 5:
+    #         count+=1
+    #         print("batch=", batch)
+    #     else:
+    #         break
+
+    optimizer = optim.SGD(model.parameters(), learning_rate)
+
+    for _ in range (1, epochs): 
+        for batch in dataloader:
+            y_pred = model(batch['x'])
+            loss = regression_loss(y_pred, batch['label'])
+
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+            # print("y_pred, y= {} {}", y_pred, batch['label'])
+        
+        # debug print loss fl
+        # print(loss)
+
 
 def train_digitclassifier(model, dataset):
     """
@@ -57,6 +129,47 @@ def train_digitclassifier(model, dataset):
     """
     model.train()
     """ YOUR CODE HERE """
+    # target accuracy at least 97%
+    learning_rate = 0.01 #
+    batch_size = 5 # 
+    epochs = 50 # 500, 20
+
+    train_set = DataLoader(dataset=dataset, batch_size=batch_size)
+
+    # debug print the instance of batch, limit to 5
+    # count = 0
+    # for batch in train_set:
+    #     if count <= 5:
+    #         count+=1
+    #         print("batch=", batch)
+    #     else:
+    #         break
+
+    optimizer = optim.SGD(model.parameters(), learning_rate)
+
+    for epoch in range (1, epochs): 
+        for batch in train_set:
+            y_pred = model(batch['x'])
+            # using mse in regression loss also work but it take much longer to train, weird???
+            # adding this to documents
+            # loss = regression_loss(y_pred, batch['label'])
+            loss = digitclassifier_loss(y_pred, batch['label'])
+
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+            # print("y_pred, y= {} {}", y_pred, batch['label'])
+        
+        # debug print loss fl
+        print("loss=", loss)
+        print("accuracy= ", dataset.get_validation_accuracy())
+
+        # implement early stopping if accuracy surpass 97%
+        if dataset.get_validation_accuracy() >= 0.97:
+            print("train stop at epoch=", epoch)
+            break
+
 
 
 def train_languageid(model, dataset):

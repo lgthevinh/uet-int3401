@@ -1,8 +1,117 @@
 % Owner: Vinh
 \subsection{Q3: MNIST Digit Classification}
 
+% Vấn đề giải quyết
+\subsubsection{Vấn đề giải quyết}
+Bài toán yêu cầu phân loại ảnh chữ số viết tay trong tập dữ liệu MNIST
+vào một trong 10 lớp, tương ứng với các chữ số từ 0 đến 9. Mỗi ảnh là ảnh
+xám kích thước $28 \times 28$, với giá trị mỗi điểm ảnh nằm trong khoảng
+$[0, 1]$. Ảnh được duỗi thành một vector đầu vào $x \in \mathbb{R}^{784}$.
+Nhãn của mỗi ảnh được biểu diễn dưới dạng vector one-hot
+$y \in \{0, 1\}^{10}$, trong đó chỉ phần tử ứng với chữ số đúng bằng 1.
+
+Mô hình cần trả về vector điểm số (logits) $z \in \mathbb{R}^{10}$, và lớp
+dự đoán là $\hat{c} = \arg\max_k z_k$. Mục tiêu là đạt độ chính xác tối
+thiểu 97\% trên tập validation.
+
+Khác với bài toán hồi quy ở Q2, nơi đầu ra là một giá trị liên tục, Q3 là
+bài toán phân loại đa lớp: đầu ra là một lớp rời rạc trong số 10 lớp. Sự
+khác biệt này quyết định cách chọn hàm mất mát cũng như cách diễn giải đầu
+ra của mô hình, được trình bày ở các phần sau.
+
 % Kiến thức sử dụng
+\subsubsection{Kiến thức sử dụng}
 
-% Vấn đề giải quyết, ứng dụng
+\textbf{Mạng nơ-ron nhiều lớp (MLP).} Mô hình gồm các lớp tuyến tính
+$f(x) = Wx + b$ xen kẽ với hàm kích hoạt phi tuyến
+$\mathrm{ReLU}(u) = \max(0, u)$. Hàm phi tuyến là bắt buộc: nếu bỏ ReLU,
+hai lớp tuyến tính liên tiếp $W_2(W_1x + b_1) + b_2$ vẫn chỉ là một ánh xạ
+tuyến tính, nên mô hình không mạnh hơn một lớp duy nhất.
 
-% Implement, công thức (optional)
+\textbf{Logits và softmax.} Đầu ra $z \in \mathbb{R}^{10}$ là các điểm số
+chưa chuẩn hoá. Hàm softmax biến chúng thành phân phối xác suất trên 10 lớp:
+\begin{equation}
+p_k = \mathrm{softmax}(z)_k = \frac{e^{z_k}}{\sum_{j=1}^{10} e^{z_j}}.
+\end{equation}
+
+\textbf{Hàm mất mát cross-entropy.} Với nhãn one-hot $y$, cross-entropy đo
+độ lệch giữa phân phối dự đoán $p$ và phân phối thật $y$:
+\begin{equation}
+L_{CE} = -\sum_{k=1}^{10} y_k \log p_k = -\log p_c,
+\end{equation}
+với $c$ là lớp đúng. Cực tiểu $L_{CE}$ tương đương với cực đại hợp lý
+(maximum likelihood) của nhãn đúng. Đạo hàm theo logits có dạng rất gọn:
+\begin{equation}
+\frac{\partial L_{CE}}{\partial z_k} = p_k - y_k.
+\end{equation}
+
+\textbf{So sánh với MSE.} Hàm MSE dùng ở Q2 cũng có thể áp dụng trực tiếp
+lên logits và nhãn one-hot:
+\begin{equation}
+L_{MSE} = \frac{1}{10}\sum_{k=1}^{10} (z_k - y_k)^2, \qquad
+\frac{\partial L_{MSE}}{\partial z_k} = \frac{2}{10}(z_k - y_k).
+\end{equation}
+Trong thực nghiệm, mô hình huấn luyện bằng MSE vẫn đạt độ chính xác cao,
+nhưng hội tụ chậm hơn đáng kể so với cross-entropy. Có thể giải thích như
+sau:
+\begin{itemize}
+  \item \emph{Vì sao MSE vẫn hoạt động:} lớp dự đoán là $\arg\max_k z_k$.
+  MSE kéo logit của lớp đúng về 1 và các logit còn lại về 0, nên khi
+  $L_{MSE}$ đủ nhỏ thì logit lớp đúng là lớn nhất và dự đoán đúng.
+  \item \emph{Độ lớn gradient:} PyTorch tính trung bình MSE trên toàn bộ
+  $B \times 10$ phần tử, còn cross-entropy chỉ trung bình trên $B$ mẫu. Hệ số
+  $2/10$ khiến gradient của MSE nhỏ hơn khoảng 5 lần, tương đương huấn luyện
+  với learning rate nhỏ hơn.
+  \item \emph{Mục tiêu không phù hợp:} MSE coi bài toán là hồi quy về đúng
+  các giá trị 0 và 1. Một dự đoán đúng và rất tự tin (ví dụ $z_c = 5$,
+  $z_k = -3$ với $k \neq c$) vẫn bị phạt, dù với bài toán phân loại đó là
+  kết quả tốt. Một phần quá trình học bị dành cho mục tiêu không cần thiết.
+  \item \emph{Tín hiệu học:} gradient $p_k - y_k$ của cross-entropy lớn khi
+  mô hình dự đoán sai một cách tự tin, và giảm dần về 0 khi lớp đúng đã
+  được tách biệt rõ. Đây đúng là hành vi cần có cho bài toán phân loại.
+\end{itemize}
+Lưu ý: nhận định thường gặp ``MSE kết hợp softmax gây triệt tiêu gradient''
+chỉ đúng khi MSE được tính trên xác suất $p$ (do đạo hàm softmax chứa thừa
+số $p_k(1 - p_k)$). Ở đây MSE được tính trên logits $z$, nên nguyên nhân
+chính là độ lớn gradient và mục tiêu không phù hợp nêu trên.
+
+\textbf{Mini-batch SGD.} Tham số được cập nhật theo
+$\theta \leftarrow \theta - \eta \nabla_\theta L$, với gradient tính trung
+bình trên một batch nhỏ $B$ mẫu. Batch nhỏ cho nhiều lần cập nhật hơn trong
+một epoch, đổi lại gradient nhiễu hơn.
+
+% Implement, công thức
+\subsubsection{Cài đặt}
+
+\textbf{Kiến trúc.} Mô hình là MLP hai lớp
+$784 \rightarrow 128 \rightarrow 10$:
+\begin{align}
+h &= \mathrm{ReLU}(W_1 x + b_1), & W_1 &\in \mathbb{R}^{128 \times 784},\\
+z &= W_2 h + b_2, & W_2 &\in \mathbb{R}^{10 \times 128}.
+\end{align}
+Tổng số tham số là $784 \cdot 128 + 128 + 128 \cdot 10 + 10 = 101\,770$.
+Mô hình trả về logits $z$; hàm \texttt{cross\_entropy} của PyTorch đã tự áp
+dụng softmax bên trong nên không cần thêm softmax ở đầu ra.
+
+\textbf{Huấn luyện.} Mô hình được huấn luyện bằng SGD với learning rate
+$\eta = 0.01$, batch size $B = 5$, tối đa 50 epoch. Sau mỗi epoch, độ chính
+xác trên tập kiểm định được đánh giá, và quá trình huấn luyện dừng sớm
+(early stopping) khi đạt ngưỡng 97\%.
+
+\textbf{Kết quả.} Bảng~\ref{tab:q3_loss} so sánh hai hàm mất mát với cùng
+kiến trúc và siêu tham số. Dòng cuối tăng learning rate của MSE lên 5 lần để
+kiểm tra giả thuyết về độ lớn gradient.
+\begin{table}[htbp]
+\caption{So sánh cross-entropy và MSE trên MNIST}
+\label{tab:q3_loss}
+\centering
+\begin{tabular}{lccc}
+\toprule
+Hàm mất mát & $\eta$ & Số epoch đạt 97\% & Độ chính xác cuối \\
+\midrule
+Cross-entropy & 0.01 & 6& 0.972 (97,2\%)\\
+MSE           & 0.01 & ~33& 0.9692 (96,92\%)\\
+MSE           & 0.05 & ~8& 0.9674 (96,74\%)\\
+\bottomrule
+\end{tabular}
+\end{table}

@@ -39,9 +39,13 @@ class PerceptronModel(Module):
 
         Hint: You can use ones(dim) to create a tensor of dimension dim.
         """
+        
         super(PerceptronModel, self).__init__()
-
         "*** YOUR CODE HERE ***"
+        
+        # create weight_vector, 1 * dims of the data
+        weight_vector = ones(1, dimensions)
+        self.w = Parameter(weight_vector)
 
 
     def get_weights(self):
@@ -62,6 +66,9 @@ class PerceptronModel(Module):
         """
         "*** YOUR CODE HERE ***"
 
+        dp = tensordot(self.w, x)
+        return dp
+
         
 
     def get_prediction(self, x):
@@ -73,8 +80,11 @@ class PerceptronModel(Module):
         score = self(x)
 
         "*** YOUR CODE HERE ***"
-
-
+        # implement step function, return -1 if negative, 1 vice versa
+        if score >= 0:
+            return 1
+        else:
+            return -1
 
 class RegressionModel(Module):
     """
@@ -87,7 +97,10 @@ class RegressionModel(Module):
         # Initialize your model parameters here
         "*** YOUR CODE HERE ***"
         super().__init__()
-   
+
+        # init layers with Linear (already with weight and bias)
+        self.l1 = Linear(1, 100)
+        self.l2 = Linear(100, 1)
 
     def forward(self, x):
         """
@@ -99,6 +112,12 @@ class RegressionModel(Module):
             A node with shape (batch_size x 1) containing predicted y-values
         """
         "*** YOUR CODE HERE ***"
+        o_l1 = self.l1(x)
+        activated_l1 = relu(o_l1)
+
+        o_l2 = self.l2(activated_l1)
+
+        return o_l2
 
 
 class DigitClassificationModel(Module):
@@ -122,6 +141,8 @@ class DigitClassificationModel(Module):
         input_size = 28 * 28
         output_size = 10
         "*** YOUR CODE HERE ***"
+        self.l1 = Linear(input_size, 128)
+        self.l2 = Linear(128, output_size)
 
 
     def forward(self, x):
@@ -139,6 +160,11 @@ class DigitClassificationModel(Module):
                 (also called logits)
         """
         """ YOUR CODE HERE """
+        y_l1 = self.l1(x)
+        ay_l1 = relu(y_l1)
+
+        y_l2 = self.l2(ay_l1)
+        return y_l2
 
 
 
