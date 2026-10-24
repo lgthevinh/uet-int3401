@@ -1,6 +1,6 @@
 .PHONY: grade
 
-Q="q2"
+Q?="q3"
 
 grade:
 	@echo "Run autograder"

@@ -129,6 +129,46 @@ def train_digitclassifier(model, dataset):
     """
     model.train()
     """ YOUR CODE HERE """
+    # target accuracy at least 97%
+    learning_rate = 0.01 #
+    batch_size = 5 # 
+    epochs = 50 # 500, 20
+
+    train_set = DataLoader(dataset=dataset, batch_size=batch_size)
+
+    # debug print the instance of batch, limit to 5
+    # count = 0
+    # for batch in train_set:
+    #     if count <= 5:
+    #         count+=1
+    #         print("batch=", batch)
+    #     else:
+    #         break
+
+    optimizer = optim.SGD(model.parameters(), learning_rate)
+
+    for _ in range (1, epochs): 
+        for batch in train_set:
+            y_pred = model(batch['x'])
+            # using mse in regression loss also work but it take much longer to train, weird???
+            # adding this to documents
+            # loss = regression_loss(y_pred, batch['label'])
+            loss = digitclassifier_loss(y_pred, batch['label'])
+
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+            # print("y_pred, y= {} {}", y_pred, batch['label'])
+        
+        # debug print loss fl
+        print("loss=", loss)
+        print("accuracy= ", dataset.get_validation_accuracy())
+
+        # implement early stopping if accuracy surpass 97%
+        if dataset.get_validation_accuracy() >= 0.97:
+            break
+
 
 
 def train_languageid(model, dataset):
