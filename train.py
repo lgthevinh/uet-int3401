@@ -147,7 +147,7 @@ def train_digitclassifier(model, dataset):
 
     optimizer = optim.SGD(model.parameters(), learning_rate)
 
-    for _ in range (1, epochs): 
+    for epoch in range (1, epochs): 
         for batch in train_set:
             y_pred = model(batch['x'])
             # using mse in regression loss also work but it take much longer to train, weird???
@@ -167,6 +167,7 @@ def train_digitclassifier(model, dataset):
 
         # implement early stopping if accuracy surpass 97%
         if dataset.get_validation_accuracy() >= 0.97:
+            print("train stop at epoch=", epoch)
             break
 
 
