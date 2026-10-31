@@ -1,8 +1,173 @@
-% Owner: Đức
-\subsection{Q6: Causal Self-Attention}
+\documentclass[11pt, a4paper]{article}
+\usepackage[a4paper, margin=2.2cm]{geometry}
+\usepackage{fontspec}
+\usepackage[vietnamese, english, bidi=basic, provide=*]{babel}
+\babelprovide[import, onchar=ids fonts]{vietnamese}
+\babelfont{rm}{Noto Sans}
+\usepackage{amsmath, amssymb}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{mdframed}
+\usepackage{hyperref}
 
-% Kiến thức sử dụng
+\definecolor{primary}{RGB}{30, 64, 175}
+\definecolor{secondary}{RGB}{15, 118, 110}
+\definecolor{bgcode}{RGB}{248, 250, 252}
+\definecolor{bordercode}{RGB}{203, 213, 225}
 
-% Vấn đề giải quyết, ứng dụng
+\hypersetup{
+    colorlinks=true,
+    linkcolor=primary,
+    urlcolor=primary
+}
 
-% Implement, công thức (optional)
+\mdfdefinestyle{codeblock}{
+    backgroundcolor=bgcode,
+    linecolor=bordercode,
+    linewidth=1pt,
+    topline=true,
+    bottomline=true,
+    leftline=true,
+    rightline=true,
+    innerleftmargin=10pt,
+    innerrightmargin=10pt,
+    innertopmargin=8pt,
+    innerbottommargin=8pt
+}
+
+\title{\textbf{\Large BÁO CÁO CHI TIẾT QUESTION 6: CƠ CHẾ ATTENTION}\\[0.3em]
+\large Project 5: Machine Learning --- CS 188 (Fall 2025)}
+\author{\textbf{Trí tuệ nhân tạo | UET}}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{Tổng quan về Question 6}
+Trong \textbf{Project 5: Machine Learning} của khóa học CS 188 (Fall 2025), \textbf{Question 6} yêu cầu người học cài đặt \textbf{cơ chế Attention} trong tệp \texttt{models.py}. Mục tiêu của bài toán là \textbf{xác định phần thông tin nào trong chuỗi đầu vào có liên quan nhiều nhất đến từng vị trí đang được xử lý}, từ đó xây dựng biểu diễn đầu ra chứa thông tin phù hợp cho vị trí đó. Đây là thành phần cốt lõi của kiến trúc Transformer.
+
+\section{Kiến thức sử dụng (What Knowledge is Used?)}
+Để thực hiện thành công Question 6, người học cần áp dụng cơ chế \textbf{Attention}, đặc biệt là \textbf{Scaled Dot-Product Attention}, cùng các khối kiến thức sau:
+\begin{itemize}[itemsep=4pt]
+    \item \textbf{Biến đổi tuyến tính (Linear Transformation):}
+    \begin{itemize}
+        \item Biến đổi biểu diễn đầu vào thành ba thành phần \textbf{Query}, \textbf{Key} và \textbf{Value}.
+    \end{itemize}
+    \item \textbf{Tích vô hướng (Dot Product):}
+    \begin{itemize}
+        \item Tính điểm tương đồng giữa Query và Key.
+    \end{itemize}
+    \item \textbf{Hàm Softmax:}
+    \begin{itemize}
+        \item Chuyển các điểm số thành trọng số Attention (không âm và có tổng bằng $1$).
+    \end{itemize}
+    \item \textbf{Tổng có trọng số (Weighted Sum):}
+    \begin{itemize}
+        \item Kết hợp thông tin từ các Value theo trọng số Attention.
+    \end{itemize}
+    \item \textbf{Mặt nạ Attention (Attention Mask):}
+    \begin{itemize}
+        \item Kiểm soát những vị trí mà một phần tử được phép chú ý đến, nếu bài toán yêu cầu.
+    \end{itemize}
+\end{itemize}
+
+\section{Bài toán giải quyết \& Ứng dụng thực tế}
+
+\subsection{Bài toán giải quyết}
+Cho một chuỗi $T$ phần tử, được biểu diễn bởi ma trận đầu vào $X \in \mathbb{R}^{T \times d}$ (mỗi hàng là biểu diễn của một vị trí), Attention giải quyết bài toán: \textbf{với mỗi vị trí, xác định các vị trí khác trong chuỗi liên quan nhất đến nó và tổng hợp thông tin từ các vị trí đó}. Kết quả là mỗi vị trí nhận được một vector biểu diễn mới, mang thông tin phù hợp với ngữ cảnh của toàn chuỗi.
+
+\subsection{Ứng dụng thực tế}
+Cơ chế Attention được áp dụng rộng rãi trong nhiều lĩnh vực:
+\begin{itemize}[itemsep=3pt]
+    \item \textbf{Xử lý ngôn ngữ tự nhiên (NLP):} Dịch máy, tóm tắt văn bản.
+    \item \textbf{Xây dựng các mô hình Transformer:} Attention là khối xây dựng chính của kiến trúc này.
+    \item \textbf{Phát triển mô hình ngôn ngữ lớn (Large Language Models):} Cho phép mô hình nắm bắt quan hệ giữa các từ ở xa nhau trong văn bản.
+    \item \textbf{Xử lý dữ liệu chuỗi trong các lĩnh vực khác:} Ví dụ phân tích chuỗi thời gian.
+\end{itemize}
+
+\section{Công thức toán học \& Quy trình Cài đặt (Implementation)}
+
+\subsection{1. Tạo Query, Key và Value}
+Từ ma trận biểu diễn đầu vào $X$, mô hình sử dụng các phép biến đổi tuyến tính để tạo ra ba ma trận:
+\begin{equation}
+Q = X W_Q, \qquad K = X W_K, \qquad V = X W_V
+\end{equation}
+Trong đó:
+\begin{itemize}[itemsep=2pt]
+    \item $Q$ (Query): đại diện cho thông tin mà mỗi vị trí muốn tìm kiếm.
+    \item $K$ (Key): đại diện cho thông tin được dùng để đánh giá mức độ phù hợp giữa các vị trí.
+    \item $V$ (Value): chứa thông tin được kết hợp để tạo đầu ra.
+    \item $W_Q, W_K, W_V$: các ma trận trọng số học được.
+\end{itemize}
+
+\subsection{2. Tính điểm Attention}
+Mức độ liên quan giữa các vị trí được xác định bằng tích vô hướng giữa Query và Key:
+\begin{equation}
+S = Q K^T
+\end{equation}
+Để điều chỉnh độ lớn của điểm số, ta chia cho căn bậc hai của số chiều Key $d_k$:
+\begin{equation}
+S_{\text{scaled}} = \frac{S}{\sqrt{d_k}} = \frac{Q K^T}{\sqrt{d_k}}
+\end{equation}
+
+\subsection{3. Tính trọng số Attention}
+Trọng số Attention thu được bằng cách áp dụng Softmax lên từng hàng của ma trận điểm số:
+\begin{equation}
+A = \text{softmax}\left(S_{\text{scaled}}\right) = \text{softmax}\left(\frac{Q K^T}{\sqrt{d_k}}\right)
+\end{equation}
+Ma trận $A$ chứa các trọng số Attention, thể hiện mức độ chú ý mà mỗi vị trí dành cho các vị trí khác.
+
+\textbf{Trường hợp sử dụng Attention Mask:} mô hình áp dụng mặt nạ lên điểm số \textit{trước} khi tính Softmax để ngăn việc chú ý đến những vị trí không được phép:
+\begin{equation}
+A = \text{softmax}\left(\frac{Q K^T}{\sqrt{d_k}} + M\right), \qquad
+M_{ij} = \begin{cases} 0 & \text{nếu vị trí } i \text{ được phép chú ý đến } j \\ -\infty & \text{ngược lại} \end{cases}
+\end{equation}
+Các vị trí bị che có điểm $-\infty$ nên sau Softmax có trọng số bằng $0$.
+
+\subsection{4. Tính đầu ra}
+Đầu ra là tổng có trọng số của các Value:
+\begin{equation}
+O = A V
+\end{equation}
+Trong đó:
+\begin{itemize}[itemsep=2pt]
+    \item $A$: ma trận trọng số Attention.
+    \item $V$: ma trận chứa thông tin cần kết hợp.
+    \item $O$: ma trận biểu diễn đầu ra sau Attention.
+\end{itemize}
+Tổng hợp lại, toàn bộ quy trình là công thức Scaled Dot-Product Attention:
+\begin{equation}
+\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{Q K^T}{\sqrt{d_k}}\right) V
+\end{equation}
+
+\subsection{5. Cấu trúc hàm cần cài đặt trong \texttt{models.py}}
+Người học cần hoàn thiện các phương thức chính của lớp cài đặt Attention (tên lớp và tham số theo đề bài của lớp):
+\begin{enumerate}[itemsep=3pt]
+    \item \texttt{\_\_init\_\_(self, \dots)}: Khởi tạo các phép biến đổi tuyến tính tạo $Q$, $K$, $V$ (tương ứng $W_Q$, $W_K$, $W_V$) và số chiều $d_k$.
+    \item \texttt{forward(self, input)}: Nhận ma trận đầu vào $X$, tính $Q$, $K$, $V$, điểm số $\frac{QK^T}{\sqrt{d_k}}$, áp dụng mặt nạ (nếu có), tính Softmax và trả về đầu ra $O = AV$.
+\end{enumerate}
+
+\section{Thống nhất Output \& Mô tả Bài toán (Problem Statement)}
+
+\begin{mdframed}[style=codeblock]
+\textbf{MÔ TẢ BÀI TOÁN}
+
+\textbf{Tên bài toán:} Xây dựng biểu diễn theo ngữ cảnh bằng cơ chế Scaled Dot-Product Attention.
+
+\textbf{Đầu vào (Inputs):}
+\begin{itemize}[itemsep=2pt]
+    \item $X \in \mathbb{R}^{T \times d}$: ma trận biểu diễn đầu vào của chuỗi gồm $T$ vị trí.
+    \item (Tùy chọn) Attention Mask $M$: xác định những vị trí mà mỗi phần tử được phép chú ý đến.
+\end{itemize}
+
+\textbf{Đầu ra (Outputs):}
+\begin{itemize}[itemsep=2pt]
+    \item $O = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V$: ma trận biểu diễn đầu ra, trong đó mỗi vị trí nhận được một vector biểu diễn mới, được tổng hợp từ thông tin của các vị trí liên quan theo trọng số Attention.
+\end{itemize}
+\end{mdframed}
+
+\section{Kết luận}
+Question 6 giúp người học nắm vững cơ chế Attention: tạo Query, Key, Value bằng biến đổi tuyến tính, đo mức độ liên quan bằng tích vô hướng có chuẩn hóa, chuyển thành trọng số bằng Softmax và tổng hợp thông tin bằng tổng có trọng số. Đây là nền tảng để hiểu kiến trúc Transformer và các mô hình ngôn ngữ lớn hiện đại.
+
+\end{document}
