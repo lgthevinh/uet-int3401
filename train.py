@@ -188,6 +188,47 @@ def train_languageid(model, dataset):
     """
     model.train()
     "*** YOUR CODE HERE ***"
+    import random   # có thể đưa lên đầu file train.py
+
+    learning_rate = 0.001
+    batch_size = 64
+    max_epochs = 30
+    target_accuracy = 0.86
+
+    train_set = DataLoader(dataset=dataset, batch_size=batch_size)
+    # Mỗi batch cùng độ dài từ -> giữ nguyên batch, chỉ xáo thứ tự các batch
+    batches = [(movedim(b['x'], 0, 1), b['label']) for b in train_set]
+
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+
+    best_acc = 0.0
+    best_state = None
+
+    for epoch in range(1, max_epochs + 1):
+        random.shuffle(batches)
+        total_loss = 0.0
+        for x, y in batches:
+            y_pred = model(x)
+            loss = languageid_loss(y_pred, y)
+
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+            total_loss += loss.item()
+
+        accuracy = dataset.get_validation_accuracy()
+        print("epoch", epoch, "avg loss=", total_loss / len(batches), "val acc=", accuracy)
+
+        # Lưu lại trọng số tốt nhất trên validation
+        if accuracy > best_acc:
+            best_acc = accuracy
+            best_state = {k: v.clone() for k, v in model.state_dict().items()}
+        if accuracy >= target_accuracy:
+            break
+
+    # Khôi phục mô hình tốt nhất (tránh trường hợp epoch cuối kém hơn)
+    if best_state is not None:
+        model.load_state_dict(best_state)
 
 
 

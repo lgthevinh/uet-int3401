@@ -187,6 +187,10 @@ class LanguageIDModel(Module):
         super(LanguageIDModel, self).__init__()
         "*** YOUR CODE HERE ***"
         # Initialize your model parameters here
+        self.hidden_size = 256
+        self.input_layer = Linear(self.num_chars, self.hidden_size)    # W_x
+        self.hidden_layer = Linear(self.hidden_size, self.hidden_size) # W_hidden
+        self.output_layer = Linear(self.hidden_size, len(self.languages))
 
 
 
@@ -220,6 +224,14 @@ class LanguageIDModel(Module):
                 (also called logits)
         """
         "*** YOUR CODE HERE ***"
+        print("LanguageIDModel.forward called")
+        # f_initial: chỉ có ký tự đầu tiên
+        h = relu(self.input_layer(xs[0]))
+        # f(h, x): cộng phần ký tự hiện tại và phần hidden state trước đó
+        for x in xs[1:]:
+            h = relu(self.input_layer(x) + self.hidden_layer(h))
+        # Không có ReLU ở lớp cuối
+        return self.output_layer(h)
 
 
 
@@ -319,4 +331,19 @@ class Attention(Module):
         B, T, C = input.size()
 
         """YOUR CODE HERE"""
+        Q = self.q_layer(input)   # (B, T, C)
+        K = self.k_layer(input)   # (B, T, C)
+        V = self.v_layer(input)   # (B, T, C)
+
+        # Q·Kᵀ / sqrt(d_k) -> (B, T, T)
+        M = matmul(Q, movedim(K, 1, 2)) / (self.layer_size ** 0.5)
+
+        # Causal mask: các vị trí tương lai (mask == 0) gán -inf trước softmax
+        M = M.masked_fill(self.mask[:,:,:T,:T] == 0, float('-inf'))[0]
+
+        # Softmax trên chiều cuối (chiều key)
+        M = softmax(M, dim=-1)
+
+        # Nhân với V -> (B, T, C)
+        return matmul(M, V)
 
