@@ -20,17 +20,28 @@ from torch import movedim
 
 
 def train_perceptron(model, dataset):
-    """
-    Train the perceptron until convergence.
-    You can iterate through DataLoader in order to 
-    retrieve all the batches you need to train on.
-
-    Each sample in the dataloader is in the form {'x': features, 'label': label} where label
-    is the item we need to predict based off of its features.
-    """
     with no_grad():
         dataloader = DataLoader(dataset, batch_size=1, shuffle=True)
-        "*** YOUR CODE HERE ***"
+        while True:
+            converged = True  # Giả sử mô hình đã hội tụ
+            
+            for batch in dataloader:
+                x = batch['x']     # Lấy vector đặc trưng
+                y = batch['label'] # Lấy nhãn thực tế (+1 hoặc -1)
+                
+                # Dự đoán nhãn của mô hình
+                prediction = model.get_prediction(x)
+                
+                # Nếu dự đoán sai so với nhãn thực tế
+                if prediction != y.item():
+                    # Cập nhật trọng số theo quy tắc Perceptron: w <- w + y * x
+                    # y có dạng tensor/scalar, x có dạng tensor đặc trưng
+                    model.w.data += y * x
+                    converged = False  # Vẫn còn mẫu dự đoán sai -> chưa hội tụ
+            
+            # Nếu trong 1 epoch toàn bộ dữ liệu mà không có mẫu nào sai -> hội tụ, dừng huấn luyện
+            if converged:
+                break
 
 
 def train_regression(model, dataset):
@@ -48,7 +59,45 @@ def train_regression(model, dataset):
         dataset: a PyTorch dataset object containing data to be trained on
         
     """
-    "*** YOUR CODE HERE ***"
+    # 1. Chuyển mô hình sang chế độ training
+    model.train()
+    
+    # 2. Khởi tạo DataLoader để chia dữ liệu thành các mini-batch (batch_size=32, trộn ngẫu nhiên dữ liệu mỗi epoch)
+    dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
+    
+    # 3. Sử dụng bộ tối ưu hóa Adam với learning rate phù hợp (ví dụ: lr=0.01)
+    optimizer = optim.Adam(model.parameters(), lr=0.01)
+
+    # 4. Vòng lặp huấn luyện cho đến khi đạt loss thỏa mãn yêu cầu (<= 0.02)
+    while True:
+        for batch in dataloader:
+            x = batch['x']     # Tensor đặc trưng (batch_size x 1)
+            y = batch['label'] # Tensor nhãn thực tế (batch_size x 1)
+
+            # Xóa gradient tích lũy từ bước trước
+            optimizer.zero_grad()
+            
+            # Lan truyền tiến (Forward pass) để dự đoán giá trị
+            y_pred = model(x)
+            
+            # Tính toán hàm mất mát (Square Loss / MSE Loss)
+            loss = regression_loss(y_pred, y)
+            
+            # Lan truyền ngược (Backward pass) để tính gradient
+            loss.backward()
+            
+            # Cập nhật trọng số của mạng nơ-ron
+            optimizer.step()
+
+        # 5. Kiểm tra giá trị mất mát trên toàn bộ tập dữ liệu sau mỗi epoch
+        with no_grad():
+            full_x = tensor(dataset.x).float()
+            full_y = tensor(dataset.y).float()
+            current_loss = regression_loss(model(full_x), full_y).item()
+            
+            # Nếu loss đạt tiêu chuẩn (<= 0.02), dừng huấn luyện
+            if current_loss <= 0.02:
+                break
 
 
 def train_digitclassifier(model, dataset):

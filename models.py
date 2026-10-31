@@ -22,83 +22,39 @@ from torch import movedim
 
 class PerceptronModel(Module):
     def __init__(self, dimensions):
-        """
-        Initialize a new Perceptron instance.
-
-        A perceptron classifies data points as either belonging to a particular
-        class (+1) or not (-1). `dimensions` is the dimensionality of the data.
-        For example, dimensions=2 would mean that the perceptron must classify
-        2D points.
-
-        In order for our autograder to detect your weight, initialize it as a
-        pytorch Parameter object as follows:
-
-        Parameter(weight_vector)
-
-        where weight_vector is a pytorch Tensor of dimension 'dimensions'
-
-        Hint: You can use ones(dim) to create a tensor of dimension dim.
-        """
         super(PerceptronModel, self).__init__()
-
-        "*** YOUR CODE HERE ***"
-
+        
+        #Khởi tạo vector trọng số self.w, dạng đối tượng Parameter, kích thước bằng dimensions, tất cả các giá trị đều là 1.
+        self.w = Parameter(ones(1, dimensions)) 
 
     def get_weights(self):
-        """
-        Return a Parameter instance with the current weights of the perceptron.
-        """
         return self.w
 
     def forward(self, x):
-        """
-        Calculates the score assigned by the perceptron to a data point x.
-
-        Inputs:
-            x: a node with shape (dimensions)
-        Returns: a node containing a single number (the score)
-
-        The pytorch function `tensordot` may be helpful here.
-        """
-        "*** YOUR CODE HERE ***"
-
-        
+        #tính tích vô hướng giữa vector x và vector trọng số self.w, trả về một node chứa một số duy nhất (điểm số)
+        return tensordot(x, self.w, dims = 1)         
 
     def get_prediction(self, x):
-        """
-        Calculates the predicted class for a single data point `x`.
-
-        Returns: 1 or -1
-        """
         score = self(x)
 
-        "*** YOUR CODE HERE ***"
-
+        # item() lấy giá trị Python scalar từ tensor 1 phần tử
+        if score.item() >= 0:
+            return 1;
+        else:
+            return -1;
 
 
 class RegressionModel(Module):
-    """
-    A neural network model for approximating a function that maps from real
-    numbers to real numbers. The network should be sufficiently large to be able
-    to approximate sin(x) on the interval [-2pi, 2pi] to reasonable precision.
-    """
-
     def __init__(self):
-        # Initialize your model parameters here
-        "*** YOUR CODE HERE ***"
         super().__init__()
-   
+        self.layer1 = Linear(1, 64)
+        self.layer2 = Linear(64, 64)
+        self.layer3 = Linear(64, 1)
 
     def forward(self, x):
-        """
-        Runs the model for a batch of examples.
-
-        Inputs:
-            x: a node with shape (batch_size x 1)
-        Returns:
-            A node with shape (batch_size x 1) containing predicted y-values
-        """
-        "*** YOUR CODE HERE ***"
+        x = relu(self.layer1(x))
+        x = relu(self.layer2(x))
+        return self.layer3(x)
 
 
 class DigitClassificationModel(Module):
