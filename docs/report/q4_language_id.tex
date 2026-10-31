@@ -1,160 +1,137 @@
-\documentclass[11pt, a4paper]{article}
-\usepackage[a4paper, margin=2.2cm]{geometry}
-\usepackage{fontspec}
-\usepackage[vietnamese, english, bidi=basic, provide=*]{babel}
-\babelprovide[import, onchar=ids fonts]{vietnamese}
-\babelfont{rm}{Noto Sans}
-\usepackage{amsmath, amssymb}
-\usepackage{booktabs}
-\usepackage{xcolor}
-\usepackage{enumitem}
-\usepackage{mdframed}
-\usepackage{hyperref}
+\subsection{Q4: Language Identification}
 
-\definecolor{primary}{RGB}{30, 64, 175}
-\definecolor{secondary}{RGB}{15, 118, 110}
-\definecolor{bgcode}{RGB}{248, 250, 252}
-\definecolor{bordercode}{RGB}{203, 213, 225}
+% Vấn đề giải quyết
+\subsubsection{Vấn đề giải quyết}
+Bài toán yêu cầu nhận diện ngôn ngữ của một \emph{từ đơn lẻ} trong 5 ngôn ngữ:
+tiếng Anh, Tây Ban Nha, Phần Lan, Hà Lan và Ba Lan. Một từ là chuỗi ký tự
+$(c_0, c_1, \dots, c_{L-1})$ trên bảng chữ cái gộp gồm 47 ký tự. Mỗi ký tự được
+mã hoá one-hot thành $x_t \in \{0,1\}^{47}$, và nhãn của từ là vector one-hot
+$y \in \{0,1\}^{5}$. Mô hình trả về logits $z \in \mathbb{R}^{5}$, lớp dự đoán là
+$\hat{c} = \arg\max_k z_k$. Mục tiêu là đạt độ chính xác tối thiểu 81\% trên
+tập kiểm tra (test).
 
-\hypersetup{
-    colorlinks=true,
-    linkcolor=primary,
-    urlcolor=primary
-}
+Dữ liệu gồm 17\,500 từ huấn luyện, 500 từ kiểm định (validation) và 500 từ
+kiểm tra. Dữ liệu được sinh bằng xử lý văn bản tự động nên có nhiễu; theo đề bài,
+bản cài đặt tham chiếu đạt trên 89\% trên tập kiểm định.
 
-\mdfdefinestyle{codeblock}{
-    backgroundcolor=bgcode,
-    linecolor=bordercode,
-    linewidth=1pt,
-    topline=true,
-    bottomline=true,
-    leftline=true,
-    rightline=true,
-    innerleftmargin=10pt,
-    innerrightmargin=10pt,
-    innertopmargin=8pt,
-    innerbottommargin=8pt
-}
+Khác với Q3, nơi đầu vào luôn là vector cố định 784 chiều, ở Q4 độ dài $L$ của
+từ thay đổi. Một mạng MLP với đầu vào cố định không áp dụng trực tiếp được, nên
+cần một kiến trúc đọc chuỗi ký tự lần lượt và nén chúng thành một vector có
+kích thước cố định. Đây là vai trò của mạng nơ-ron hồi quy (RNN).
 
-\title{\textbf{\Large BÁO CÁO CHI TIẾT QUESTION 4: NHẬN DIỆN NGÔN NGỮ BẰNG RNN}\\[0.3em]
-\large Project 5: Machine Learning --- CS 188 (Fall 2025)}
-\author{\textbf{Trí tuệ nhân tạo | UET}}
-\date{\today}
+% Kiến thức sử dụng
+\subsubsection{Kiến thức sử dụng}
 
-\begin{document}
-\maketitle
-
-\section{Tổng quan về Question 4}
-Trong \textbf{Project 5: Machine Learning} của khóa học CS 188 (Fall 2025), \textbf{Question 4} yêu cầu người học cài đặt mô hình \textbf{LanguageIDModel} trong tệp \texttt{models.py}. Bài toán đặt ra là \textbf{nhận diện ngôn ngữ của một từ} chỉ dựa trên chuỗi ký tự tạo nên từ đó. Vì các từ có độ dài khác nhau, mô hình cần xử lý dữ liệu dạng chuỗi, và đây là lý do \textbf{mạng nơ-ron hồi quy (Recurrent Neural Network -- RNN)} được sử dụng.
-
-\section{Kiến thức sử dụng (What Knowledge is Used?)}
-Để thực hiện thành công Question 4, người học cần áp dụng các khối kiến thức sau:
-\begin{itemize}[itemsep=4pt]
-    \item \textbf{Học có giám sát (Supervised Learning):}
-    \begin{itemize}
-        \item Mô hình học từ tập dữ liệu gồm các từ đã được gán nhãn ngôn ngữ tương ứng.
-        \item Bài toán thuộc dạng phân loại đa lớp (multi-class classification).
-    \end{itemize}
-    \item \textbf{Mạng nơ-ron hồi quy (Recurrent Neural Network -- RNN):}
-    \begin{itemize}
-        \item Xử lý tuần tự từng ký tự của chuỗi đầu vào.
-        \item Duy trì \textbf{trạng thái ẩn (hidden state)} để lưu giữ thông tin từ những ký tự đã xuất hiện trước đó.
-    \end{itemize}
-    \item \textbf{Biểu diễn dữ liệu (Data Representation):}
-    \begin{itemize}
-        \item Chuyển các ký tự thành dạng số để mô hình có thể xử lý, ví dụ bằng \textbf{One-hot Encoding}.
-    \end{itemize}
-    \item \textbf{Hàm mất mát Cross-Entropy:}
-    \begin{itemize}
-        \item Đo lường sự khác biệt giữa dự đoán của mô hình và nhãn ngôn ngữ thực tế.
-    \end{itemize}
-    \item \textbf{Lan truyền ngược qua thời gian (Backpropagation Through Time -- BPTT):}
-    \begin{itemize}
-        \item Lan truyền ngược gradient qua các bước thời gian để cập nhật trọng số của RNN trong quá trình huấn luyện.
-    \end{itemize}
-\end{itemize}
-
-\section{Bài toán giải quyết \& Ứng dụng thực tế}
-
-\subsection{Bài toán giải quyết}
-Question 4 giải quyết bài toán \textbf{Nhận diện ngôn ngữ (Language Identification)}: Cho trước một từ được biểu diễn bởi chuỗi ký tự $(c_1, c_2, \dots, c_T)$, mục tiêu là xác định từ đó thuộc ngôn ngữ nào trong tập các ngôn ngữ cho trước. Do độ dài chuỗi $T$ thay đổi theo từng từ, mô hình phải đọc lần lượt từng ký tự và tổng hợp thông tin của toàn bộ chuỗi trước khi đưa ra kết luận.
-
-\subsection{Ứng dụng thực tế}
-Tư duy nhận diện ngôn ngữ từ chuỗi ký tự được áp dụng rộng rãi trong thực tiễn:
-\begin{itemize}[itemsep=3pt]
-    \item \textbf{Nhận diện ngôn ngữ từ từ, văn bản (Language Detection):} Tự động xác định ngôn ngữ của một từ hoặc đoạn văn bản bất kỳ.
-    \item \textbf{Phân loại văn bản đa ngôn ngữ (Multilingual Text Classification):} Phân nhóm tài liệu theo ngôn ngữ trước khi xử lý hoặc lưu trữ.
-    \item \textbf{Hỗ trợ hệ thống xử lý ngôn ngữ tự nhiên (NLP) và tiền xử lý dữ liệu văn bản:} Lựa chọn đúng bộ công cụ (dịch máy, kiểm tra chính tả, phân tích cú pháp) cho từng ngôn ngữ.
-\end{itemize}
-
-\section{Công thức toán học \& Quy trình Cài đặt (Implementation)}
-
-\subsection{1. Biểu diễn đầu vào (Input Representation)}
-Mỗi ký tự $c_t$ được chuyển thành một vector số $x_t$ bằng \textbf{One-hot Encoding}: vector có độ dài bằng kích thước bảng ký tự, trong đó chỉ phần tử ứng với ký tự đó có giá trị $1$, các phần tử còn lại bằng $0$. Chuỗi vector $(x_1, x_2, \dots, x_T)$ sau đó được đưa lần lượt vào RNN.
-
-\subsection{2. Cập nhật trạng thái ẩn (Hidden State Update)}
-Tại mỗi bước thời gian $t$, RNN kết hợp thông tin từ ký tự hiện tại $x_t$ với trạng thái ẩn trước đó $h_{t-1}$:
+\textbf{Mạng nơ-ron hồi quy (RNN).} RNN đọc từng ký tự và duy trì một trạng thái
+ẩn $h_t \in \mathbb{R}^{d}$ tóm tắt các ký tự đã đọc. Với ký tự đầu tiên chưa có
+trạng thái trước đó, nên dùng riêng một hàm $f_{\text{initial}}$:
 \begin{equation}
-h_t = \text{ReLU}\left(x_t W_x + h_{t-1} W_h + b_h\right)
+h_0 = \mathrm{ReLU}(W_x x_0 + b_x).
 \end{equation}
-Trong đó:
-\begin{itemize}[itemsep=2pt]
-    \item $x_t$: vector biểu diễn ký tự tại vị trí $t$.
-    \item $h_{t-1}$: trạng thái ẩn của bước trước (với $h_0$ khởi tạo bằng vector không).
-    \item $W_x, W_h$: các ma trận trọng số học được.
-    \item $b_h$: vector bias.
-    \item $h_t$: trạng thái ẩn mới, chứa thông tin được tích lũy trong quá trình xử lý chuỗi.
-\end{itemize}
-
-\subsection{3. Dự đoán ngôn ngữ (Language Prediction)}
-Sau khi xử lý hết chuỗi ký tự, trạng thái ẩn cuối cùng $h_T$ được dùng để tạo ra điểm số (logits) cho từng lớp ngôn ngữ:
+Với các ký tự tiếp theo, phần đóng góp của ký tự hiện tại được \emph{cộng} với
+phần đóng góp của trạng thái trước trước khi qua hàm phi tuyến:
 \begin{equation}
-z = h_T W_o + b_o
+h_t = \mathrm{ReLU}\bigl(W_x x_t + b_x + W_h h_{t-1} + b_h\bigr),
+\qquad t = 1, \dots, L-1.
 \end{equation}
-Trong đó $z$ là vector điểm số dự đoán, $W_o$ và $b_o$ lần lượt là ma trận trọng số và vector bias của tầng đầu ra. Mô hình chọn ngôn ngữ có điểm số cao nhất:
+Phép cộng này tương đương với nối $[x_t;\, h_{t-1}]$ rồi nhân với ma trận khối
+$[W_x \;\; W_h]$, nên $h_t$ phụ thuộc phi tuyến vào cả ký tự hiện tại lẫn lịch sử.
+Sau ký tự cuối cùng, $h_{L-1}$ là bản tóm tắt của cả từ và được đưa qua tầng đầu
+ra:
 \begin{equation}
-\hat{y} = \underset{i}{\arg\max}\; z_i
+z = W_o\, h_{L-1} + b_o.
 \end{equation}
 
-\subsection{4. Huấn luyện mô hình (Training)}
-Mô hình so sánh dự đoán với nhãn thực tế bằng hàm mất mát \textbf{Cross-Entropy}:
+\textbf{Chia sẻ tham số.} Cùng một bộ $(W_x, b_x, W_h, b_h)$ được dùng ở mọi bước
+thời gian. Nhờ vậy số tham số không phụ thuộc vào độ dài từ và mô hình xử lý
+được chuỗi có độ dài bất kỳ.
+
+\textbf{Hàm mất mát cross-entropy.} Giống Q3, với logits $z$ và nhãn one-hot $y$,
+hàm mất mát trên một batch $B$ từ là
 \begin{equation}
-L = -\log P\left(y_{\text{true}} \mid x\right), \qquad P(i \mid x) = \frac{e^{z_i}}{\sum_j e^{z_j}}
+L = -\frac{1}{B}\sum_{i=1}^{B}\sum_{k=1}^{5} y_{ik}\log p_{ik}, \qquad
+p_{ik} = \frac{e^{z_{ik}}}{\sum_{j=1}^{5} e^{z_{ij}}},
 \end{equation}
-Sau đó, \textbf{lan truyền ngược qua thời gian (BPTT)} được sử dụng để tính gradient của $L$ theo các tham số $W_x, W_h, b_h, W_o, b_o$ và cập nhật trọng số nhằm giảm giá trị hàm mất mát.
+và gradient theo logits vẫn có dạng gọn $\partial L / \partial z_{ik} = (p_{ik} - y_{ik})/B$.
 
-\subsection{5. Cấu trúc hàm cần cài đặt trong \texttt{models.py}}
-Trong bài tập CS 188, người học cần hoàn thiện lớp \texttt{LanguageIDModel} với các phương thức chính:
-\begin{enumerate}[itemsep=3pt]
-    \item \texttt{\_\_init\_\_(self)}: Khởi tạo các tham số của RNN ($W_x$, $W_h$, $b_h$) và tầng đầu ra ($W_o$, $b_o$).
-    \item \texttt{run(self, xs)}: Nhận một chuỗi các tensor ký tự \texttt{xs}, cập nhật trạng thái ẩn qua từng bước thời gian và trả về tensor điểm số $z$ cho các lớp ngôn ngữ.
-    \item \texttt{get\_loss(self, xs, y)}: Tính hàm mất mát Cross-Entropy giữa điểm số dự đoán và nhãn thực tế \texttt{y}.
-    \item \texttt{train(self, dataset)}: Huấn luyện mô hình bằng gradient descent (qua BPTT) cho đến khi đạt độ chính xác yêu cầu trên tập kiểm tra.
-\end{enumerate}
+\textbf{Lan truyền ngược qua thời gian (BPTT).} Vòng lặp trong \texttt{forward}
+khiến đồ thị tính toán được trải ra thành $L$ bước dùng chung trọng số. PyTorch
+(autograd) tự lan truyền ngược qua đồ thị này, và gradient theo $W_h$ là tổng
+đóng góp từ mọi bước thời gian. Do độ dài từ nhỏ (tối đa 10 ký tự trong dữ liệu
+được cung cấp) nên vấn đề triệt tiêu hoặc bùng nổ gradient của RNN không đáng kể
+ở đây; với chuỗi dài, các biến thể LSTM hoặc GRU thường được ưu tiên.
 
-\section{Thống nhất Output \& Mô tả Bài toán (Problem Statement)}
+\textbf{Tối ưu Adam.} Khác với SGD ở Q3 dùng chung một learning rate cho mọi
+tham số, Adam điều chỉnh bước cập nhật của từng tham số dựa trên trung bình
+động của gradient và của bình phương gradient. Với RNN, Adam thường hội tụ ổn
+định hơn SGD thuần, và đề bài cũng khuyến nghị dùng Adam cho dự án này.
 
-\begin{mdframed}[style=codeblock]
-\textbf{MÔ TẢ BÀI TOÁN CHUẨN ĐỂ ĐƯA VÀO BÁO CÁO / ĐỀ BÀI}
+\textbf{Batch theo độ dài và hình dạng dữ liệu.} Dữ liệu được chia thành các
+nhóm (bucket) theo độ dài từ, và mỗi batch chỉ chứa các từ cùng độ dài $L$.
+\texttt{DataLoader} trả về tensor $x$ có hình dạng $(B, L, 47)$, trong khi
+\texttt{forward} cần danh sách $L$ tensor $(B, 47)$, nên cần hoán đổi hai chiều
+đầu bằng \texttt{movedim(x, 0, 1)} để được $(L, B, 47)$.
 
-\textbf{Tên bài toán:} Nhận diện ngôn ngữ của một từ dựa trên chuỗi ký tự bằng Mạng nơ-ron hồi quy (\texttt{LanguageIDModel}).
+\textbf{Overfitting và tập kiểm định.} Mô hình có thể thuộc lòng tập huấn luyện
+(loss rất thấp) mà vẫn dự đoán kém trên dữ liệu mới. Vì vậy độ chính xác trên
+tập kiểm định được dùng để theo dõi khả năng tổng quát hoá và quyết định dừng
+huấn luyện. Điểm số cuối cùng lại được tính trên tập kiểm tra riêng, nên ngưỡng
+dừng trên validation cần cao hơn ngưỡng yêu cầu 81\% để chừa biên an toàn.
 
-\textbf{Đầu vào (Inputs):}
-\begin{itemize}[itemsep=2pt]
-    \item Tập dữ liệu huấn luyện \texttt{dataset} chứa các cặp $(\texttt{xs}, y)$.
-    \item \texttt{xs}: chuỗi các tensor one-hot, mỗi tensor biểu diễn một ký tự của từ theo thứ tự xuất hiện.
-    \item $y$: nhãn ngôn ngữ thực tế của từ, được mã hóa one-hot trên tập các ngôn ngữ.
+% Implement, công thức
+\subsubsection{Cài đặt}
+
+\textbf{Kiến trúc.} Mô hình dùng ba tầng tuyến tính với kích thước ẩn $d = 256$:
+\begin{align}
+W_x &\in \mathbb{R}^{256 \times 47}, & W_h &\in \mathbb{R}^{256 \times 256}, &
+W_o &\in \mathbb{R}^{5 \times 256}.
+\end{align}
+Mỗi tầng có bias riêng. Tổng số tham số là
+$(47 \cdot 256 + 256) + (256 \cdot 256 + 256) + (256 \cdot 5 + 5) = 79\,365$.
+Tầng cuối không có ReLU vì logits cần nhận được cả giá trị âm, và hàm
+\texttt{cross\_entropy} của PyTorch đã tự áp dụng softmax bên trong.
+
+\textbf{Các hàm cần cài đặt.} Khác với phiên bản cũ của dự án, các hàm nằm ở ba
+tệp khác nhau:
+\begin{itemize}
+  \item \texttt{LanguageIDModel.\_\_init\_\_} và \texttt{LanguageIDModel.forward(xs)}
+  trong \texttt{models.py}: khởi tạo ba tầng tuyến tính và chạy RNN trên danh sách
+  \texttt{xs}, trả về logits có hình dạng $(B, 5)$.
+  \item \texttt{languageid\_loss(y\_pred, y)} trong \texttt{losses.py}: trả về
+  cross-entropy giữa logits và nhãn one-hot.
+  \item \texttt{train\_languageid(model, dataset)} trong \texttt{train.py}: vòng
+  huấn luyện.
 \end{itemize}
 
-\textbf{Đầu ra (Outputs):}
-\begin{itemize}[itemsep=2pt]
-    \item Phương thức \texttt{run(self, xs)}: Trả về tensor điểm số $z$, mỗi phần tử ứng với một lớp ngôn ngữ.
-    \item Phương thức \texttt{get\_loss(self, xs, y)}: Trả về giá trị mất mát Cross-Entropy $L = -\log P(y_{\text{true}} \mid x)$.
-    \item Phương thức \texttt{train(self, dataset)}: Một mô hình RNN đã được huấn luyện hoàn chỉnh, dự đoán ngôn ngữ tương ứng với từ đầu vào bằng cách chọn lớp có điểm số cao nhất $\hat{y} = \arg\max_i z_i$.
-\end{itemize}
-\end{mdframed}
+\textbf{Huấn luyện.} Mô hình dùng Adam với learning rate $\eta = 0.001$, batch size
+$B = 64$, tối đa 30 epoch. Mỗi epoch, \emph{thứ tự các batch} được xáo trộn
+(nội dung mỗi batch giữ nguyên để các từ trong batch vẫn cùng độ dài). Sau mỗi
+epoch, độ chính xác trên tập kiểm định được đánh giá và trọng số tốt nhất được
+lưu lại; quá trình dừng sớm khi độ chính xác kiểm định đạt 86\%, và cuối cùng
+trọng số tốt nhất được nạp lại vào mô hình.
 
-\section{Kết luận}
-Question 4 giúp người học làm quen với việc xử lý dữ liệu dạng chuỗi: biểu diễn ký tự bằng one-hot, duy trì thông tin qua trạng thái ẩn của RNN, và huấn luyện bằng Cross-Entropy cùng BPTT. Đây là nền tảng quan trọng để tiếp cận các mô hình xử lý ngôn ngữ tự nhiên phức tạp hơn như LSTM, GRU hay Transformer.
+\textbf{Kết quả.} Bảng~\ref{tab:q4_train} so sánh hai cách huấn luyện với cùng
+kiến trúc và cùng siêu tham số $(d, \eta, B)$.
+\begin{table}[htbp]
+\caption{Ảnh hưởng của cách duyệt dữ liệu đến độ chính xác trên Q4}
+\label{tab:q4_train}
+\centering
+\begin{tabular}{p{7.2cm}cc}
+\toprule
+Cách huấn luyện & Acc. validation & Acc. test \\
+\midrule
+Duyệt batch theo thứ tự cố định, lấy trọng số epoch cuối & 0.77 & 77.0\% \\
+Xáo thứ tự batch, lấy trọng số tốt nhất & 0.842 & 83.6\% \\
+\bottomrule
+\end{tabular}
+\end{table}
 
-\end{document}
+\textbf{Nhận xét.} Ở lần chạy đầu, dữ liệu được duyệt theo thứ tự cố định từ từ
+ngắn đến từ dài trong mỗi epoch. Sau 30 epoch, loss của batch cuối chỉ còn 0.025
+nhưng độ chính xác kiểm định chỉ đạt 0.77 và test đạt 77.0\%, nên mô hình không
+thiếu năng lực mà bị overfitting; việc tăng số epoch hay độ rộng của mạng không
+giải quyết được vấn đề này. Sau khi xáo thứ tự batch và giữ lại trọng số tốt
+nhất, test tăng lên 83.6\%, vượt ngưỡng 81\%. Hai thay đổi này được áp dụng
+đồng thời nên chưa tách riêng được đóng góp của từng thay đổi, và mỗi dòng của
+bảng mới là kết quả của một lần chạy; do khởi tạo trọng số và thứ tự batch có
+tính ngẫu nhiên, kết quả giữa các lần chạy có thể lệch nhau vài điểm phần trăm.
