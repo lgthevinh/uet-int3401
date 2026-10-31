@@ -147,7 +147,7 @@ def train_digitclassifier(model, dataset):
 
     optimizer = optim.SGD(model.parameters(), learning_rate)
 
-    for epoch in range (1, epochs): 
+    for epoch in range(1, epochs + 1):
         for batch in train_set:
             y_pred = model(batch['x'])
             # using mse in regression loss also work but it take much longer to train, weird???
@@ -160,13 +160,14 @@ def train_digitclassifier(model, dataset):
             optimizer.step()
 
             # print("y_pred, y= {} {}", y_pred, batch['label'])
-        
-        # debug print loss fl
+
+        # validation accuracy runs the whole dev set through the model, so compute it once per epoch
+        val_accuracy = dataset.get_validation_accuracy()
         print("loss=", loss)
-        print("accuracy= ", dataset.get_validation_accuracy())
+        print("accuracy= ", val_accuracy)
 
         # implement early stopping if accuracy surpass 97%
-        if dataset.get_validation_accuracy() >= 0.97:
+        if val_accuracy >= 0.97:
             print("train stop at epoch=", epoch)
             break
 
@@ -238,10 +239,12 @@ def Train_DigitConvolution(model, dataset):
     """
     """ YOUR CODE HERE """
     model.train()
-    # target accuracy at least 97%
-    learning_rate = 0.01 #
-    batch_size = 5 # 
-    epochs = 50 # 
+    # autograder needs >= 80% test accuracy; we stop early at 97% validation
+    # accuracy instead, same as Q3, so the two models are comparable
+    learning_rate = 0.01
+    batch_size = 5
+    epochs = 50
+    target_accuracy = 0.97
 
     train_set = DataLoader(dataset=dataset, batch_size=batch_size)
 
@@ -256,7 +259,7 @@ def Train_DigitConvolution(model, dataset):
 
     optimizer = optim.SGD(model.parameters(), learning_rate)
 
-    for epoch in range (1, epochs): 
+    for epoch in range(1, epochs + 1):
         for batch in train_set:
             y_pred = model(batch['x'])
             loss = digitconvolution_Loss(y_pred, batch['label'])
@@ -266,12 +269,13 @@ def Train_DigitConvolution(model, dataset):
             optimizer.step()
 
             # print("y_pred, y= {} {}", y_pred, batch['label'])
-        
-        # debug print loss fl
-        print("loss=", loss)
-        print("accuracy= ", dataset.get_validation_accuracy())
 
-        # implement early stopping if accuracy surpass 97%
-        if dataset.get_validation_accuracy() >= 0.97:
+        # validation accuracy runs the whole dev set through the model, so compute it once per epoch
+        val_accuracy = dataset.get_validation_accuracy()
+        print("loss=", loss)
+        print("accuracy= ", val_accuracy)
+
+        # early stopping once the validation target is reached
+        if val_accuracy >= target_accuracy:
             print("train stop at epoch=", epoch)
             break

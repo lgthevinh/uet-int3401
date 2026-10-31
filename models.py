@@ -237,19 +237,18 @@ class LanguageIDModel(Module):
 
 def Convolve(input: tensor, weight: tensor):
     """
-    Acts as a convolution layer by applying a 2d convolution with the given inputs and weights.
-    DO NOT import any pytorch methods to directly do this, the convolution must be done with only the functions
-    already imported.
+    2D convolution (cross-correlation, no kernel flip) of one image with one kernel,
+    no padding and stride 1: slides `weight` over `input` and sums the element-wise
+    products at each position.
 
-    There are multiple ways to complete this function. One possible solution would be to use 'tensordot'.
-    If you would like to index a tensor, you can do it as such:
+    Inputs:
+        input: one image, shape (H x W)
+        weight: the kernel, shape (kH x kW)
+    Returns:
+        the feature map, shape ((H - kH + 1) x (W - kW + 1))
 
-    tensor[y:y+height, x:x+width]
-
-    This returns a subtensor who's first element is tensor[y,x] and has height 'height, and width 'width'
-
-    The method 'zeros((y_dim,x_dim))' may also be useful. It initializes a pytorch tensor with dimensions (y_dim, x_dim), with every value
-    set to zero.
+    Built only from tensor ops (slicing, tensordot) so autograd can backprop into
+    `weight`, which DigitConvolutionalModel trains as a Parameter.
     """
     input_tensor_dimensions = input.shape
     weight_dimensions = weight.shape
