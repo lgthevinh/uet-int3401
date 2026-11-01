@@ -15,11 +15,16 @@
 \usepackage{tabularx}
 \usepackage{array}
 \usepackage{multirow}
+\usepackage{url}
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+% Đánh dấu phần chưa viết bằng chữ đỏ trong PDF, để không sót khi nộp bài
+\newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
+
 \begin{document}
 
-\title{Tên chủ đề}
+\title{Báo cáo bài tập lớn: Học máy với PyTorch theo CS188 Project 5 (UC Berkeley)}
 
 \author{\IEEEauthorblockN{Lương Thế Vinh}
 \IEEEauthorblockA{\textit{Mã sinh viên:} 23020715}
@@ -40,243 +45,302 @@
 \renewcommand{\refname}{Tài liệu tham khảo}
 
 \begin{abstract}
-This document is a model and instructions for \LaTeX.
-This and the IEEEtran.cls file define the components of your paper [title, text, heads, etc.]. *CRITICAL: Do Not Use Symbols, Special Characters, Footnotes, 
-or Math in Paper Title or Abstract.
+Báo cáo trình bày bài tập lớn môn Trí tuệ nhân tạo (INT3401\_11) của nhóm,
+thực hiện Project 5: Machine Learning của học phần CS188, Đại học California,
+Berkeley. Nhóm tự cài đặt và huấn luyện bằng PyTorch sáu mô hình có độ phức
+tạp tăng dần: perceptron phân loại nhị phân, mạng truyền thẳng hồi quy hàm sin,
+mạng nhiều lớp phân loại chữ số viết tay MNIST, mạng nơ-ron hồi quy nhận diện
+ngôn ngữ của một từ, lớp tích chập tự cài đặt cho bài toán MNIST, và khối
+self-attention có mặt nạ nhân quả. Mỗi mô hình được chấm bằng autograder của
+dự án theo một ngưỡng độ chính xác hoặc giá trị mất mát.
+\todo{một câu tóm tắt kết quả chính, viết sau khi xong phần IV}.
+Mã nguồn và hướng dẫn chạy lại được công bố tại
+\url{https://github.com/lgthevinh/uet-int3401}.
 \end{abstract}
 
 \begin{IEEEkeywords}
-component, formatting, style, styling, insert.
+perceptron, mạng nơ-ron, MNIST, mạng nơ-ron hồi quy, tích chập, self-attention, PyTorch
 \end{IEEEkeywords}
-
 
 \begin{table}[!ht]
     \centering
     \renewcommand{\arraystretch}{1.15}
-    \scriptsize
+    \footnotesize
     \caption{Bảng phân công công việc cho từng thành viên.}
-    \label{tab:1}
-    \resizebox{\columnwidth}{!}{%
-    \begin{tabular}{cccc}
-    \hline
-        \textbf{Thành viên} & \textbf{Mã sinh viên} & \textbf{Đóng góp} & \textbf{Công việc} \\
-    \hline
-        Lương Thế Vinh & 23020715 & & \\
-        Nguyễn Trọng Khang & 24020169 & & \\
-        Nguyễn Minh Đức & 24022628 & & \\
-    \hline
-    \end{tabular}}
+    \label{tab:assignment}
+    \begin{tabularx}{\columnwidth}{@{}lccX@{}}
+    \toprule
+        \textbf{Thành viên} & \textbf{MSSV} & \textbf{Đóng góp} & \textbf{Công việc} \\
+    \midrule
+        Lương Thế Vinh & 23020715 & 36\% & Nhóm trưởng; Q3, Q5; tổng hợp báo cáo; quản lý tiến độ trên CoReach \\
+        Nguyễn Trọng Khang & 24020169 & 32\% & Q1, Q2 \\
+        Nguyễn Minh Đức & 24022628 & 32\% & Q4, Q6 \\
+    \bottomrule
+    \end{tabularx}
 \end{table}
 
-\section{Introduction}
-This document is a model and instructions for \LaTeX.
-Please observe the conference page limits. For more information about how to become an IEEE Conference author or how to write your paper, please visit   IEEE Conference Author Center website: https://conferences.ieeeauthorcenter.ieee.org/.
+% ============================================================
+\section{Giới thiệu}
+\label{sec:intro}
 
-\subsection{Maintaining the Integrity of the Specifications}
+Bài tập lớn của nhóm thực hiện Project~5: Machine Learning của học phần CS188
+(Introduction to Artificial Intelligence) tại Đại học California, Berkeley,
+phiên bản PyTorch học kỳ Fall 2025~\cite{cs188}. Dự án gồm sáu bài (Q1--Q6).
+Ở mỗi bài, nhóm tự cài đặt mô hình, hàm mất mát và vòng huấn luyện trong các
+tệp \texttt{models.py}, \texttt{losses.py} và \texttt{train.py}, chỉ dùng các
+thành phần cơ bản của PyTorch~\cite{pytorch}. Kết quả được chấm bằng autograder
+đi kèm dự án theo một ngưỡng cố định cho từng bài (Bảng~\ref{tab:overview}),
+với tổng điểm tối đa là 25.
 
-The IEEEtran class file is used to format your paper and style the text. All margins, 
-column widths, line spaces, and text fonts are prescribed; please do not 
-alter them. You may note peculiarities. For example, the head margin
-measures proportionately more than is customary. This measurement 
-and others are deliberate, using specifications that anticipate your paper 
-as one part of the entire proceedings, and not as an independent document. 
-Please do not revise any of the current designations.
-
-\section{Prepare Your Paper Before Styling}
-Before you begin to format your paper, first write and save the content as a 
-separate text file. Complete all content and organizational editing before 
-formatting. Please note sections \ref{AA} to \ref{FAT} below for more information on 
-proofreading, spelling and grammar.
-
-Keep your text and graphic files separate until after the text has been 
-formatted and styled. Do not number text heads---{\LaTeX} will do that 
-for you.
-
-\subsection{Abbreviations and Acronyms}\label{AA}
-Define abbreviations and acronyms the first time they are used in the text, 
-even after they have been defined in the abstract. Abbreviations such as 
-IEEE, SI, MKS, CGS, ac, dc, and rms do not have to be defined. Do not use 
-abbreviations in the title or heads unless they are unavoidable.
-
-\subsection{Units}
+Mục tiêu của dự án là hiểu cách một mạng nơ-ron được xây dựng và huấn luyện từ
+các phép toán tensor, thay vì dùng các mô hình có sẵn. Sáu bài được sắp theo độ
+phức tạp tăng dần, mỗi bài thêm một ý tưởng so với bài trước:
 \begin{itemize}
-\item Use either SI (MKS) or CGS as primary units. (SI units are encouraged.) English units may be used as secondary units (in parentheses). An exception would be the use of English units as identifiers in trade, such as ``3.5-inch disk drive''.
-\item Avoid combining SI and CGS units, such as current in amperes and magnetic field in oersteds. This often leads to confusion because equations do not balance dimensionally. If you must use mixed units, clearly state the units for each quantity that you use in an equation.
-\item Do not mix complete spellings and abbreviations of units: ``Wb/m\textsuperscript{2}'' or ``webers per square meter'', not ``webers/m\textsuperscript{2}''. Spell out units when they appear in text: ``. . . a few henries'', not ``. . . a few H''.
-\item Use a zero before decimal points: ``0.25'', not ``.25''. Use ``cm\textsuperscript{3}'', not ``cc''.)
+  \item Q1: mô hình tuyến tính đơn giản nhất, perceptron~\cite{rosenblatt},
+  phân loại nhị phân bằng một siêu phẳng.
+  \item Q2: thêm hàm kích hoạt phi tuyến để xấp xỉ một hàm liên tục
+  ($\sin x$) bằng mạng truyền thẳng.
+  \item Q3: chuyển từ hồi quy sang phân loại đa lớp, áp dụng cho ảnh chữ số
+  viết tay MNIST~\cite{lecun}.
+  \item Q4: xử lý đầu vào có độ dài thay đổi (chuỗi ký tự) bằng mạng nơ-ron
+  hồi quy (RNN)~\cite{elman}.
+  \item Q5: khai thác cấu trúc không gian của ảnh bằng phép tích chập tự cài
+  đặt~\cite{lecun}.
+  \item Q6: cài đặt khối self-attention có mặt nạ nhân quả, thành phần cốt lõi
+  của kiến trúc Transformer~\cite{vaswani}.
 \end{itemize}
 
-\subsection{Equations}
-Number equations consecutively. To make your 
-equations more compact, you may use the solidus (~/~), the exp function, or 
-appropriate exponents. Italicize Roman symbols for quantities and variables, 
-but not Greek symbols. Use a long dash rather than a hyphen for a minus 
-sign. Punctuate equations with commas or periods when they are part of a 
-sentence, as in:
+\begin{table}[!t]
+    \centering
+    \renewcommand{\arraystretch}{1.15}
+    \footnotesize
+    \caption{Tổng quan các bài toán và điều kiện đạt của autograder.}
+    \label{tab:overview}
+    \begin{tabularx}{\columnwidth}{@{}cXXc@{}}
+    \toprule
+        \textbf{Bài} & \textbf{Nhiệm vụ} & \textbf{Điều kiện đạt} & \textbf{Điểm} \\
+    \midrule
+        Q1 & Phân loại nhị phân bằng perceptron
+           & Độ chính xác 100\% trên tập huấn luyện & 5 \\
+        Q2 & Hồi quy $\sin x$ trên $[-2\pi, 2\pi]$
+           & Loss $\le 0.02$ trên tập huấn luyện & 5 \\
+        Q3 & Phân loại chữ số MNIST (10 lớp)
+           & Độ chính xác $\ge 97\%$ trên tập kiểm tra & 5 \\
+        Q4 & Nhận diện ngôn ngữ của một từ (5 ngôn ngữ) bằng RNN
+           & Độ chính xác $\ge 81\%$ trên tập kiểm tra & 5 \\
+        Q5 & Tích chập tự cài đặt và phân loại MNIST
+           & \texttt{Convolve} khớp phép tích chập tham chiếu; độ chính xác
+             $\ge 80\%$ trên tập kiểm tra & 3 \\
+        Q6 & Self-attention có mặt nạ nhân quả
+           & Đầu ra khớp đáp án tham chiếu & 2 \\
+    \midrule
+           & \textbf{Tổng} & & \textbf{25} \\
+    \bottomrule
+    \end{tabularx}
+\end{table}
+
+Phần còn lại của báo cáo được tổ chức như sau. Phần~\ref{sec:background} tóm
+tắt kiến thức nền tảng dùng chung cho các bài. Phần~\ref{sec:method} trình bày
+phương pháp và cách cài đặt của từng bài. Phần~\ref{sec:results} mô tả thiết
+lập thực nghiệm, kết quả và phân tích. Phần~\ref{sec:conclusion} kết luận và
+nêu hướng phát triển.
+
+% ============================================================
+\section{Kiến thức nền tảng}
+\label{sec:background}
+
+Phần này tóm tắt các khái niệm dùng chung cho nhiều bài, để
+phần~\ref{sec:method} chỉ cần trình bày phần riêng của từng bài. Trình bày chi
+tiết hơn có thể tham khảo trong~\cite{goodfellow}.
+
+\subsection{Tầng tuyến tính và mạng nhiều lớp}
+Một tầng tuyến tính biến đổi đầu vào $x \in \mathbb{R}^{n}$ thành
+$u = Wx + b$, với ma trận trọng số $W \in \mathbb{R}^{m \times n}$ và vector
+bias $b \in \mathbb{R}^{m}$ là các tham số học được. Mạng nhiều lớp
+(multilayer perceptron, MLP) xếp chồng các tầng tuyến tính, xen giữa là một
+hàm kích hoạt phi tuyến $\sigma$:
 \begin{equation}
-a+b=\gamma\label{eq}
+h = \sigma(W_1 x + b_1), \qquad \hat{y} = W_2 h + b_2.
+\label{eq:mlp}
 \end{equation}
+Hàm phi tuyến là bắt buộc: nếu bỏ $\sigma$, hai tầng liên tiếp
+$W_2(W_1 x + b_1) + b_2$ vẫn chỉ là một ánh xạ tuyến tính, nên mạng không mạnh
+hơn một tầng duy nhất. Ngược lại, chỉ với một lớp ẩn đủ rộng, MLP đã có thể
+xấp xỉ một hàm liên tục bất kỳ trên một miền bị chặn với sai số tuỳ
+ý~\cite{hornik}; kết quả này đúng với mọi hàm kích hoạt không phải đa thức,
+trong đó có ReLU~\cite{leshno}. Đây là cơ sở để Q2 xấp xỉ được hàm $\sin x$.
 
-Be sure that the 
-symbols in your equation have been defined before or immediately following 
-the equation. Use ``\eqref{eq}'', not ``Eq.~\eqref{eq}'' or ``equation \eqref{eq}'', except at 
-the beginning of a sentence: ``Equation \eqref{eq} is . . .''
-
-\subsection{\LaTeX-Specific Advice}
-
-Please use ``soft'' (e.g., \verb|\eqref{Eq}|) cross references instead
-of ``hard'' references (e.g., \verb|(1)|). That will make it possible
-to combine sections, add equations, or change the order of figures or
-citations without having to go through the file line by line.
-
-Please don't use the \verb|{eqnarray}| equation environment. Use
-\verb|{align}| or \verb|{IEEEeqnarray}| instead. The \verb|{eqnarray}|
-environment leaves unsightly spaces around relation symbols.
-
-Please note that the \verb|{subequations}| environment in {\LaTeX}
-will increment the main equation counter even when there are no
-equation numbers displayed. If you forget that, you might write an
-article in which the equation numbers skip from (17) to (20), causing
-the copy editors to wonder if you've discovered a new method of
-counting.
-
-{\BibTeX} does not work by magic. It doesn't get the bibliographic
-data from thin air but from .bib files. If you use {\BibTeX} to produce a
-bibliography you must send the .bib files. 
-
-{\LaTeX} can't read your mind. If you assign the same label to a
-subsubsection and a table, you might find that Table I has been cross
-referenced as Table IV-B3. 
-
-{\LaTeX} does not have precognitive abilities. If you put a
-\verb|\label| command before the command that updates the counter it's
-supposed to be using, the label will pick up the last counter to be
-cross referenced instead. In particular, a \verb|\label| command
-should not go before the caption of a figure or a table.
-
-Do not use \verb|\nonumber| inside the \verb|{array}| environment. It
-will not stop equation numbers inside \verb|{array}| (there won't be
-any anyway) and it might stop a wanted equation number in the
-surrounding equation.
-
-\subsection{Some Common Mistakes}\label{SCM}
+\subsection{Hàm kích hoạt}
+Báo cáo dùng ba hàm kích hoạt:
 \begin{itemize}
-\item The word ``data'' is plural, not singular.
-\item The subscript for the permeability of vacuum $\mu_{0}$, and other common scientific constants, is zero with subscript formatting, not a lowercase letter ``o''.
-\item In American English, commas, semicolons, periods, question and exclamation marks are located within quotation marks only when a complete thought or name is cited, such as a title or full quotation. When quotation marks are used, instead of a bold or italic typeface, to highlight a word or phrase, punctuation should appear outside of the quotation marks. A parenthetical phrase or statement at the end of a sentence is punctuated outside of the closing parenthesis (like this). (A parenthetical sentence is punctuated within the parentheses.)
-\item A graph within a graph is an ``inset'', not an ``insert''. The word alternatively is preferred to the word ``alternately'' (unless you really mean something that alternates).
-\item Do not use the word ``essentially'' to mean ``approximately'' or ``effectively''.
-\item In your paper title, if the words ``that uses'' can accurately replace the word ``using'', capitalize the ``u''; if not, keep using lower-cased.
-\item Be aware of the different meanings of the homophones ``affect'' and ``effect'', ``complement'' and ``compliment'', ``discreet'' and ``discrete'', ``principal'' and ``principle''.
-\item Do not confuse ``imply'' and ``infer''.
-\item The prefix ``non'' is not a word; it should be joined to the word it modifies, usually without a hyphen.
-\item There is no period after the ``et'' in the Latin abbreviation ``et al.''.
-\item The abbreviation ``i.e.'' means ``that is'', and the abbreviation ``e.g.'' means ``for example''.
+  \item \emph{Hàm dấu}: $\mathrm{sign}(u) = +1$ nếu $u \ge 0$ và $-1$ nếu
+  ngược lại, dùng cho dự đoán của perceptron ở Q1. Đạo hàm của hàm này bằng 0
+  ở hầu hết mọi nơi nên không dùng được để lan truyền gradient.
+  \item \emph{ReLU}: $\mathrm{ReLU}(u) = \max(0, u)$, dùng ở các lớp ẩn từ Q2
+  đến Q5. ReLU tính nhanh và có gradient bằng 1 trên miền dương, nên ít bị
+  triệt tiêu gradient hơn sigmoid hay tanh.
+  \item \emph{Softmax}: biến vector điểm số (logits) $z \in \mathbb{R}^{K}$
+  thành phân phối xác suất trên $K$ lớp,
+  \begin{equation}
+  p_k = \mathrm{softmax}(z)_k = \frac{e^{z_k}}{\sum_{j=1}^{K} e^{z_j}},
+  \label{eq:softmax}
+  \end{equation}
+  dùng cho các bài phân loại (Q3--Q5) và để tính trọng số attention ở Q6.
 \end{itemize}
-An excellent style manual for science writers is \cite{b7}.
 
-\subsection{Authors and Affiliations}\label{AAA}
-\textbf{The class file is designed for, but not limited to, six authors.} A 
-minimum of one author is required for all conference articles. Author names 
-should be listed starting from left to right and then moving down to the 
-next line. This is the author sequence that will be used in future citations 
-and by indexing services. Names should not be listed in columns nor group by 
-affiliation. Please keep your affiliations as succinct as possible (for 
-example, do not differentiate among departments of the same organization).
+\subsection{Hàm mất mát}
+Hàm mất mát đo độ lệch giữa dự đoán và nhãn thật trên một batch gồm $B$ mẫu.
+Bài toán hồi quy (Q2) dùng sai số bình phương trung bình (MSE):
+\begin{equation}
+L_{\mathrm{MSE}} = \frac{1}{B} \sum_{i=1}^{B} (\hat{y}_i - y_i)^2.
+\label{eq:mse}
+\end{equation}
+Các bài phân loại (Q3--Q5) dùng cross-entropy. Với nhãn one-hot $y_i$ và xác
+suất dự đoán $p_i$ tính theo~\eqref{eq:softmax},
+\begin{equation}
+L_{\mathrm{CE}} = -\frac{1}{B} \sum_{i=1}^{B} \sum_{k=1}^{K} y_{ik} \log p_{ik},
+\qquad
+\frac{\partial L_{\mathrm{CE}}}{\partial z_{ik}} = \frac{p_{ik} - y_{ik}}{B}.
+\label{eq:ce}
+\end{equation}
+Gradient theo logits có dạng gọn: lớn khi mô hình dự đoán sai một cách tự tin,
+và giảm dần về 0 khi lớp đúng đã được tách biệt rõ. Hàm
+\texttt{cross\_entropy} của PyTorch nhận trực tiếp logits và tự áp dụng softmax
+bên trong, nên các mô hình phân loại trả về logits thay vì xác suất.
 
-\subsection{Identify the Headings}\label{ITH}
-Headings, or heads, are organizational devices that guide the reader through 
-your paper. There are two types: component heads and text heads.
+\subsection{Tối ưu bằng gradient descent}
+Huấn luyện là tìm bộ tham số $\theta$ cực tiểu hoá hàm mất mát $L$. Gradient
+descent lặp lại phép cập nhật
+\begin{equation}
+\theta \leftarrow \theta - \eta \nabla_{\theta} L,
+\label{eq:gd}
+\end{equation}
+với $\eta$ là learning rate. Thay vì tính gradient trên toàn bộ tập dữ liệu,
+mini-batch SGD tính gradient trên một batch $B$ mẫu, cho nhiều lần cập nhật hơn
+với cùng chi phí tính toán, đổi lại gradient nhiễu hơn. Một lượt duyệt hết tập
+huấn luyện gọi là một epoch. Adam~\cite{kingma} điều chỉnh bước cập nhật riêng
+cho từng tham số dựa trên trung bình động của gradient và của bình phương
+gradient, thường hội tụ ổn định hơn SGD. Nhóm dùng SGD cho Q2, Q3, Q5 và Adam
+cho Q4.
 
-Component heads identify the different components of your paper and are not 
-topically subordinate to each other. Examples include Acknowledgments and 
-References and, for these, the correct style to use is ``Heading 5''. Use 
-``figure caption'' for your Figure captions, and ``table head'' for your 
-table title. Run-in heads, such as ``Abstract'', will require you to apply a 
-style (in this case, italic) in addition to the style provided by the drop 
-down menu to differentiate the head from the text.
+Gradient được tính bằng lan truyền ngược (backpropagation)~\cite{rumelhart}:
+áp dụng quy tắc chuỗi từ hàm mất mát ngược về từng tham số. PyTorch thực hiện
+việc này tự động (autograd): lời gọi \texttt{loss.backward()} duyệt đồ thị
+tính toán đã được ghi lại trong lượt forward và tính gradient cho mọi tham số,
+sau đó \texttt{optimizer.step()} áp dụng~\eqref{eq:gd}. Vì vậy mọi phép tính
+trong mô hình phải là phép toán tensor để giữ được đồ thị này, đây là điều kiện
+quan trọng khi tự cài đặt tích chập ở Q5.
 
-Text heads organize the topics on a relational, hierarchical basis. For 
-example, the paper title is the primary text head because all subsequent 
-material relates and elaborates on this one topic. If there are two or more 
-sub-topics, the next level head (uppercase Roman numerals) should be used 
-and, conversely, if there are not at least two sub-topics, then no subheads 
-should be introduced.
+Perceptron ở Q1 cũng nằm trong khung này. Với hàm mất mát perceptron
+$L(w) = \max(0, -y\, w \cdot x)$, gradient bằng $-y x$ khi mẫu bị phân loại
+sai và bằng 0 khi phân loại đúng, nên một bước SGD với learning rate $\eta$
+cho đúng quy tắc cập nhật perceptron $w \leftarrow w + \eta\, y x$. Q1 và các
+bài sau vì vậy chỉ khác nhau ở mô hình và hàm mất mát.
 
-\subsection{Figures and Tables}\label{FAT}
-\paragraph{Positioning Figures and Tables} Place figures and tables at the top and 
-bottom of columns. Avoid placing them in the middle of columns. Large 
-figures and tables may span across both columns. Figure captions should be 
-below the figures; table heads should appear above the tables. Insert 
-figures and tables after they are cited in the text. Use the abbreviation 
-``Fig.~\ref{fig}'', even at the beginning of a sentence.
+\subsection{Đánh giá và khả năng tổng quát hoá}
+Dữ liệu được chia thành tập huấn luyện (train) để cập nhật tham số, tập kiểm
+định (validation) để theo dõi quá trình huấn luyện và chọn mô hình, và tập
+kiểm tra (test) để đánh giá cuối cùng. Một mô hình có thể đạt loss rất thấp
+trên tập huấn luyện nhưng dự đoán kém trên dữ liệu mới (overfitting), nên quá
+trình huấn luyện được theo dõi bằng độ chính xác trên tập kiểm định và dừng
+sớm (early stopping) khi đạt ngưỡng. Tập kiểm tra chỉ phản ánh đúng khả năng
+tổng quát hoá khi không được dùng trong bất kỳ quyết định nào của quá trình
+huấn luyện; điều kiện này được xem lại cho từng bài ở
+phần~\ref{sec:results}.
 
-\begin{table}[htbp]
-\caption{Table Type Styles}
-\begin{center}
-\begin{tabular}{|c|c|c|c|}
-\hline
-\textbf{Table}&\multicolumn{3}{|c|}{\textbf{Table Column Head}} \\
-\cline{2-4} 
-\textbf{Head} & \textbf{\textit{Table column subhead}}& \textbf{\textit{Subhead}}& \textbf{\textit{Subhead}} \\
-\hline
-copy& More table copy$^{\mathrm{a}}$& &  \\
-\hline
-\multicolumn{4}{l}{$^{\mathrm{a}}$Sample of a Table footnote.}
-\end{tabular}
-\label{tab1}
-\end{center}
-\end{table}
+% ============================================================
+\section{Phương pháp}
+\label{sec:method}
 
-\begin{figure}[htbp]
-\centerline{\includegraphics{fig1.png}}
-\caption{Example of a figure caption.}
-\label{fig}
-\end{figure}
+Mỗi bài được trình bày theo cùng một khung: bài toán cụ thể, mô hình và công
+thức, rồi cách cài đặt. Các kiến thức chung ở phần~\ref{sec:background} không
+được nhắc lại, và kết quả của từng bài được trình bày ở
+phần~\ref{sec:results}.
 
-Figure Labels: Use 8 point Times New Roman for Figure labels. Use words 
-rather than symbols or abbreviations when writing Figure axis labels to 
-avoid confusing the reader. As an example, write the quantity 
-``Magnetization'', or ``Magnetization, M'', not just ``M''. If including 
-units in the label, present them within parentheses. Do not label axes only 
-with units. In the example, write ``Magnetization (A/m)'' or ``Magnetization 
-\{A[m(1)]\}'', not just ``A/m''. Do not label axes with a ratio of 
-quantities and units. For example, write ``Temperature (K)'', not 
-``Temperature/K''.
+\subsection{Q1: Perceptron}
+\todo{viết lại từ code (\texttt{PerceptronModel}, \texttt{train\_perceptron});
+nguồn \texttt{q1\_perceptron.tex}; khoảng 0.3 trang}
 
-\section*{References}
+\subsection{Q2: Hồi quy phi tuyến}
+\todo{viết lại từ code: MLP $1 \to 100 \to 1$, SGD, learning rate 0.01, batch
+10; nguồn \texttt{q2\_regression.tex}; khoảng 0.4 trang}
 
-Please number citations consecutively within brackets \cite{b1}. The 
-sentence punctuation follows the bracket \cite{b2}. Refer simply to the reference 
-number, as in \cite{b3}---do not use ``Ref. \cite{b3}'' or ``reference \cite{b3}'' except at 
-the beginning of a sentence: ``Reference \cite{b3} was the first $\ldots$''
+\subsection{Q3: Phân loại chữ số MNIST}
+\todo{rút gọn từ \texttt{q3\_digit\_classification.tex}, bỏ phần softmax và
+cross-entropy đã có ở mục II-C; khoảng 0.5 trang}
 
-Number footnotes separately in superscripts. Place the actual footnote at 
-the bottom of the column in which it was cited. Do not put footnotes in the 
-abstract or reference list. Use letters for table footnotes.
+\subsection{Q4: Nhận diện ngôn ngữ}
+\todo{rút gọn từ \texttt{q4\_language\_id.tex}, bỏ phần Adam và overfitting đã
+có ở mục II; khoảng 0.6 trang}
 
-Unless there are six authors or more give all authors' names; do not use 
-``et al.''. Papers that have not been published, even if they have been 
-submitted for publication, should be cited as ``unpublished'' \cite{b4}. Papers 
-that have been accepted for publication should be cited as ``in press'' \cite{b5}. 
-Capitalize only the first word in a paper title, except for proper nouns and 
-element symbols.
+\subsection{Q5: Tích chập}
+\todo{rút gọn từ \texttt{q5\_convolution.tex}; khoảng 0.6 trang}
 
-For papers published in translation journals, please give the English 
-citation first, followed by the original foreign-language citation \cite{b6}.
+\subsection{Q6: Self-attention có mặt nạ nhân quả}
+\todo{rút gọn từ \texttt{q6\_attention.tex}, bỏ đoạn nhắc tới Q7; khoảng 0.6
+trang}
 
+% ============================================================
+\section{Thực nghiệm và kết quả}
+\label{sec:results}
+
+\subsection{Thiết lập thực nghiệm}
+\todo{môi trường chạy; dữ liệu và cách chia tập của từng bài; Bảng III: siêu
+tham số (optimizer, learning rate, batch size, số epoch tối đa, điều kiện
+dừng)}
+
+\subsection{Kết quả tổng hợp}
+\todo{Bảng IV: chỉ số, ngưỡng, kết quả đạt được và điểm của từng bài; tổng
+điểm sau khi chạy \texttt{python autograder.py}}
+
+\subsection{Phân tích}
+\todo{Q3: so sánh cross-entropy và MSE; Q4: xáo thứ tự batch và giữ trọng số
+tốt nhất; Q5: quá trình huấn luyện và lưu ý về độ chính xác 100\%; Q6: kiểm
+tra tính đúng; so sánh MLP với tích chập (Q3, Q5) và RNN với attention (Q4,
+Q6)}
+
+% ============================================================
+\section{Kết luận và hướng phát triển}
+\label{sec:conclusion}
+\todo{tóm tắt kết quả; hạn chế (\texttt{Convolve} dùng vòng lặp và một
+kernel, RNN thuần, attention một đầu, cách chia dữ liệu của Q5); hướng phát
+triển (vector hoá tích chập, CNN nhiều kernel, LSTM/GRU, multi-head attention,
+character GPT)}
+
+% ============================================================
 \begin{thebibliography}{00}
-\bibitem{b1} G. Eason, B. Noble, and I. N. Sneddon, ``On certain integrals of Lipschitz-Hankel type involving products of Bessel functions,'' Phil. Trans. Roy. Soc. London, vol. A247, pp. 529--551, April 1955.
-\bibitem{b2} J. Clerk Maxwell, A Treatise on Electricity and Magnetism, 3rd ed., vol. 2. Oxford: Clarendon, 1892, pp.68--73.
-\bibitem{b3} I. S. Jacobs and C. P. Bean, ``Fine particles, thin films and exchange anisotropy,'' in Magnetism, vol. III, G. T. Rado and H. Suhl, Eds. New York: Academic, 1963, pp. 271--350.
-\bibitem{b4} K. Elissa, ``Title of paper if known,'' unpublished.
-\bibitem{b5} R. Nicole, ``Title of paper with only first word capitalized,'' J. Name Stand. Abbrev., in press.
-\bibitem{b6} Y. Yorozu, M. Hirano, K. Oka, and Y. Tagawa, ``Electron spectroscopy studies on magneto-optical media and plastic substrate interface,'' IEEE Transl. J. Magn. Japan, vol. 2, pp. 740--741, August 1987 [Digests 9th Annual Conf. Magnetics Japan, p. 301, 1982].
-\bibitem{b7} M. Young, The Technical Writer's Handbook. Mill Valley, CA: University Science, 1989.
-\bibitem{b8} D. P. Kingma and M. Welling, ``Auto-encoding variational Bayes,'' 2013, arXiv:1312.6114. [Online]. Available: https://arxiv.org/abs/1312.6114
-\bibitem{b9} S. Liu, ``Wi-Fi Energy Detection Testbed (12MTC),'' 2023, gitHub repository. [Online]. Available: https://github.com/liustone99/Wi-Fi-Energy-Detection-Testbed-12MTC
-\bibitem{b10} ``Treatment episode data set: discharges (TEDS-D): concatenated, 2006 to 2009.'' U.S. Department of Health and Human Services, Substance Abuse and Mental Health Services Administration, Office of Applied Studies, August, 2013, DOI:10.3886/ICPSR30122.v2
-\bibitem{b11} K. Eves and J. Valasek, ``Adaptive control for singularly perturbed systems examples,'' Code Ocean, Aug. 2023. [Online]. Available: https://codeocean.com/capsule/4989235/tree
+\bibitem{cs188} University of California, Berkeley, ``CS 188 Project 5:
+Machine Learning,'' Fall 2025. [Online]. Available:
+\url{https://inst.eecs.berkeley.edu/~cs188/archive/fa25/projects/proj5/}
+\bibitem{pytorch} A. Paszke \textit{et al.}, ``PyTorch: An imperative style,
+high-performance deep learning library,'' in \textit{Proc. Adv. Neural Inf.
+Process. Syst. (NeurIPS)}, 2019, pp. 8024--8035.
+\bibitem{rosenblatt} F. Rosenblatt, ``The perceptron: A probabilistic model
+for information storage and organization in the brain,'' \textit{Psychol.
+Rev.}, vol. 65, no. 6, pp. 386--408, 1958.
+\bibitem{lecun} Y. LeCun, L. Bottou, Y. Bengio, and P. Haffner,
+``Gradient-based learning applied to document recognition,'' \textit{Proc.
+IEEE}, vol. 86, no. 11, pp. 2278--2324, Nov. 1998.
+\bibitem{elman} J. L. Elman, ``Finding structure in time,'' \textit{Cogn.
+Sci.}, vol. 14, no. 2, pp. 179--211, 1990.
+\bibitem{vaswani} A. Vaswani \textit{et al.}, ``Attention is all you need,''
+in \textit{Proc. Adv. Neural Inf. Process. Syst. (NeurIPS)}, 2017,
+pp. 5998--6008.
+\bibitem{goodfellow} I. Goodfellow, Y. Bengio, and A. Courville, \textit{Deep
+Learning}. Cambridge, MA, USA: MIT Press, 2016.
+\bibitem{hornik} K. Hornik, M. Stinchcombe, and H. White, ``Multilayer
+feedforward networks are universal approximators,'' \textit{Neural Netw.},
+vol. 2, no. 5, pp. 359--366, 1989.
+\bibitem{leshno} M. Leshno, V. Y. Lin, A. Pinkus, and S. Schocken,
+``Multilayer feedforward networks with a nonpolynomial activation function
+can approximate any function,'' \textit{Neural Netw.}, vol. 6, no. 6,
+pp. 861--867, 1993.
+\bibitem{kingma} D. P. Kingma and J. Ba, ``Adam: A method for stochastic
+optimization,'' in \textit{Proc. Int. Conf. Learn. Represent. (ICLR)}, 2015.
+[Online]. Available: \url{https://arxiv.org/abs/1412.6980}
+\bibitem{rumelhart} D. E. Rumelhart, G. E. Hinton, and R. J. Williams,
+``Learning representations by back-propagating errors,'' \textit{Nature},
+vol. 323, no. 6088, pp. 533--536, 1986.
 \end{thebibliography}
 
 \end{document}

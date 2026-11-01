@@ -2,6 +2,8 @@
 
 Bản nháp cấu trúc để review trước khi gộp vào `final_report.tex`.
 
+**Trạng thái**: `final_report.tex` đã có phần đầu, I và II; III–V mới có khung, phần chưa viết đánh dấu `\todo{...}` (chữ đỏ trong PDF).
+
 **Ràng buộc** (từ `docs/sumary.md`): template IEEE conference, tiếng Việt, tối đa 7 trang, link GitHub đặt trong phần Tóm tắt. Report phải có ít nhất 4 mục:
 
 | Mục bắt buộc | Nằm ở section |
@@ -15,7 +17,7 @@ Bản nháp cấu trúc để review trước khi gộp vào `final_report.tex`.
 
 ## 0. Phần đầu
 
-- **Tiêu đề** (đề xuất): *Xây dựng và huấn luyện các mô hình mạng nơ-ron cơ bản với PyTorch: từ Perceptron đến Self-Attention*
+- **Tiêu đề**: *Báo cáo bài tập lớn: Học máy với PyTorch theo CS188 Project 5 (UC Berkeley)*
 - **Tác giả**: 3 thành viên + MSSV (đã có).
 - **Tóm tắt** (~150 từ): dự án làm gì (CS188 Project 5, 6 bài), các mô hình đã cài đặt, kết quả chính (25/25 điểm autograder, accuracy các bài), link GitHub.
 - **Từ khoá**: perceptron, mạng nơ-ron, MNIST, RNN, tích chập, self-attention, PyTorch.
@@ -23,9 +25,9 @@ Bản nháp cấu trúc để review trước khi gộp vào `final_report.tex`.
 
   | Thành viên | MSSV | Công việc | Đóng góp |
   |---|---|---|---|
-  | Lương Thế Vinh | 23020715 | Q3, Q5, tổng hợp final report, quản lý sprint/CoReach | ?% |
-  | Nguyễn Trọng Khang | 24020169 | Q1, Q2 | ?% |
-  | Nguyễn Minh Đức | 24022628 | Q4, Q6 | ?% |
+  | Lương Thế Vinh | 23020715 | Q3, Q5, tổng hợp final report, quản lý sprint/CoReach | 36% |
+  | Nguyễn Trọng Khang | 24020169 | Q1, Q2 | 32% |
+  | Nguyễn Minh Đức | 24022628 | Q4, Q6 | 32% |
 
 ## I. Giới thiệu
 
@@ -33,7 +35,7 @@ Mục đích: người đọc hiểu dự án giải quyết bài toán gì trư
 
 - Bối cảnh: CS188 Project 5 (bản PyTorch), mục tiêu học cách xây dựng và huấn luyện mạng nơ-ron từ mô hình tuyến tính đến attention.
 - Mạch phát triển qua 6 bài: tuyến tính (Q1) → phi tuyến (Q2) → phân loại đa lớp (Q3) → chuỗi độ dài thay đổi (Q4) → khai thác cấu trúc không gian (Q5) → attention (Q6).
-- **Bảng II: Tổng quan các bài toán**: Q, nhiệm vụ, đầu vào → đầu ra, điều kiện đạt, điểm (lấy từ bảng Questions trong `sumary.md`).
+- **Bảng II: Tổng quan các bài toán**: Q, nhiệm vụ, điều kiện đạt, điểm. Bỏ cột đầu vào → đầu ra để bảng vừa một cột; chi tiết đầu vào/đầu ra nằm ở III. Ngưỡng và tập được chấm lấy từ `autograder.py`.
 - Cấu trúc bài báo cáo (1–2 câu).
 
 ## II. Kiến thức nền tảng
@@ -113,10 +115,10 @@ Không bắt buộc ≥ 7 tài liệu (chỉ áp dụng cho nhóm tự đề xu�
 
 ## Vấn đề cần xử lý trước khi gộp
 
-1. **Dung lượng**: 6 file Q hiện có khoảng 7 400 từ (tính cả markup), trong khi 7 trang IEEE hai cột chứa khoảng 5 000 từ cho toàn bộ báo cáo. Cần cắt khoảng 35–40%. Chỗ nên cắt nhiều nhất: Q5 (1 785 từ), chi tiết broadcast của mặt nạ ở Q6, phần "Ứng dụng thực tế" ở Q1/Q2, và các đoạn kiến thức lặp lại (chuyển lên II).
+1. **Dung lượng**: 6 file Q hiện có khoảng 7 200 từ (tính cả markup), trong khi 7 trang IEEE hai cột chứa khoảng 5 000 từ cho toàn bộ báo cáo. Cần cắt khoảng 35%. Chỗ nên cắt nhiều nhất: Q5 (1 785 từ), chi tiết broadcast của mặt nạ ở Q6, và các đoạn kiến thức lặp lại (chuyển lên II).
 2. **Q1, Q2 cần viết lại**:
    - Đang là document độc lập (`\documentclass{article}` + `fontspec`, chỉ biên dịch được bằng XeLaTeX/LuaLaTeX), không tương thích với `final_report.tex` (pdfLaTeX + gói `vietnam`).
-   - Có các mục không hợp với báo cáo (Ứng dụng thực tế, khung Thống nhất Output), văn phong hướng dẫn ("người học cần...").
+   - Có mục không hợp với báo cáo (khung Thống nhất Output), văn phong hướng dẫn ("người học cần..."). Mục Ứng dụng thực tế đã bỏ.
    - Chưa có kết quả và siêu tham số thực tế.
    - Q2 ghi lớp ẩn $H = 64$ hoặc $128$, nhưng code dùng $1 \to 100 \to 1$, batch 10, 500 epoch.
    - Q2 dùng cú pháp markdown `**ReLU**` trong LaTeX.
@@ -126,4 +128,9 @@ Không bắt buộc ≥ 7 tài liệu (chỉ áp dụng cho nhóm tự đề xu�
 4. **Vị trí kết quả chưa thống nhất**: Q3, Q4 đặt kết quả trong mục "Cài đặt", Q5 có mục "Kết quả" riêng. Theo dàn ý này, tất cả chuyển sang IV.
 5. **Thuật ngữ chưa thống nhất**: Q4 dùng "tập kiểm định / kiểm tra", Q5 dùng "validation / test". Cần chọn một cách viết, ví dụ tiếng Việt kèm tiếng Anh trong ngoặc ở lần đầu.
 6. **Q3**: bảng có số gần đúng ("~33", "~8") nên chạy lại để lấy số chính xác; ghi rõ ngưỡng 97% là điều kiện dừng trên validation, còn autograder chấm trên test.
-7. **Placeholder của template**: tiêu đề "Tên chủ đề", tóm tắt, từ khoá, cột Đóng góp, toàn bộ nội dung mẫu của IEEE và danh sách tài liệu tham khảo mẫu.
+7. **Placeholder của template**: đã thay hết trong `final_report.tex`, chỉ còn câu tóm tắt kết quả trong phần Tóm tắt (viết sau khi xong IV).
+8. **Q4 chọn mô hình bằng tập test**: `LanguageIDDataset.get_validation_accuracy()` gọi `_predict()` với mặc định `split='test'` (`backend.py:437`), nên `train_languageid` đang dừng sớm và giữ trọng số tốt nhất theo độ chính xác trên **tập test**, đúng tập autograder chấm. Hệ quả:
+   - Con số 83.6% bị lạc quan, và câu "độ chính xác trên tập kiểm định" trong `q4_language_id.tex` không đúng.
+   - `sumary.md` ghi Q4 chấm "Validation accuracy ≥ 81%", nhưng autograder thực tế chấm trên tập test.
+   - Cách sửa: trong `train.py` dùng `dataset._predict('dev')` để chọn mô hình theo tập dev (không sửa `backend.py`), rồi chạy lại `q4`.
+9. **Dấu thập phân**: `final_report.tex` đang dùng dấu chấm (0.02, 83.6%) cho khớp với code và output của autograder; Q3 đang dùng dấu phẩy ("97,2%"). Cần thống nhất một kiểu.
