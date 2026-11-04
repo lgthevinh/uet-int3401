@@ -1,8 +1,199 @@
 % Owner: Vinh
 \subsection{Q5: Convolution}
 
+% Vấn đề giải quyết
+\subsubsection{Vấn đề giải quyết}
+Q5 tiếp tục bài toán phân loại chữ số viết tay MNIST của Q3: mỗi ảnh xám
+kích thước $28 \times 28$ cần được xếp vào một trong 10 lớp (chữ số 0 đến
+9). Điểm khác biệt là trước khi đưa vào mạng nhiều lớp, ảnh được đi qua một
+lớp tích chập (convolution) do sinh viên tự cài đặt trong hàm
+\texttt{Convolve}, chỉ dùng các phép toán tensor cơ bản, không dùng hàm
+\texttt{conv2d} có sẵn của PyTorch.
+
+Đầu vào là vector $x \in \mathbb{R}^{784}$, được định dạng lại thành ma trận
+ảnh $X \in \mathbb{R}^{28 \times 28}$. Đầu ra là vector logits
+$z \in \mathbb{R}^{10}$, và lớp dự đoán là $\hat{c} = \arg\max_k z_k$.
+
+Lớp tích chập khắc phục hai hạn chế của mô hình MLP ở Q3, vốn duỗi ảnh
+thành vector:
+\begin{itemize}
+  \item \emph{Bỏ qua vị trí điểm ảnh:} hai điểm ảnh kề nhau chỉ là hai đầu
+  vào độc lập. Nếu hoán vị thứ tự các điểm ảnh (giống nhau cho mọi ảnh), MLP
+  vẫn học được như cũ, tức là nó không dùng thông tin về cấu trúc không gian.
+  \item \emph{Không chia sẻ trọng số:} một nét dọc ở góc trên trái và cùng
+  nét đó ở giữa ảnh được xử lý bởi các trọng số khác nhau, nên mô hình phải
+  học lại cùng một mẫu tại mỗi vị trí.
+\end{itemize}
+
+Autograder chấm hai phần: hàm \texttt{Convolve} phải cho kết quả khớp với
+phép tích chập tham chiếu trên các ma trận ngẫu nhiên (1 điểm), và mô hình
+phải đạt độ chính xác tối thiểu 80\% trên tập test (2 điểm). Dữ liệu của Q5
+nhỏ hơn nhiều so với Q3: 200 ảnh huấn luyện, tập validation và tập test mỗi
+tập 50 ảnh. Cả hai tập này đều được lấy từ 100 ảnh đầu tiên của chính tập
+huấn luyện; ảnh hưởng của điều này được phân tích ở phần Kết quả.
+
 % Kiến thức sử dụng
+\subsubsection{Kiến thức sử dụng}
 
-% Vấn đề giải quyết, ứng dụng
+\textbf{Phép tích chập 2 chiều.} Cho ảnh $X \in \mathbb{R}^{H \times W}$ và
+kernel (bộ lọc) $K \in \mathbb{R}^{k_H \times k_W}$. Kernel được đặt lên một
+vùng con (patch) cùng kích thước của ảnh; tại mỗi vị trí, nhân từng phần tử
+của patch với phần tử tương ứng của kernel rồi cộng lại, được một giá trị
+của bản đồ đặc trưng (feature map) $Y$:
+\begin{equation}
+Y_{i,j} = \sum_{a=0}^{k_H-1} \sum_{b=0}^{k_W-1} X_{i+a,\, j+b}\, K_{a,b}.
+\label{eq:q5_conv}
+\end{equation}
+Sau đó kernel trượt sang một điểm ảnh và lặp lại cho đến khi phủ hết ảnh.
+Về mặt toán học, công thức trên là phép tương quan chéo (cross-correlation);
+phép tích chập đúng nghĩa cần lật kernel trước khi trượt. Trong học sâu, cả
+hai vẫn được gọi chung là tích chập, vì kernel được học từ dữ liệu nên việc
+có lật hay không không ảnh hưởng đến khả năng của mô hình. Autograder cũng
+dùng phiên bản không lật kernel.
 
-% Implement, công thức (optional)
+\textbf{Kích thước đầu ra.} Khi không dùng padding và bước trượt (stride)
+bằng 1, kernel có thể đặt tại các độ lệch $0, 1, \dots, H - k_H$ theo chiều
+dọc và $0, 1, \dots, W - k_W$ theo chiều ngang, nên
+\begin{equation}
+Y \in \mathbb{R}^{(H - k_H + 1) \times (W - k_W + 1)}.
+\label{eq:q5_shape}
+\end{equation}
+Với ảnh $28 \times 28$ và kernel $3 \times 3$, feature map có kích thước
+$26 \times 26$, tức 676 giá trị sau khi duỗi thành vector.
+
+\textbf{Kernel là bộ phát hiện mẫu.} Giá trị $Y_{i,j}$ lớn khi patch tại vị
+trí $(i, j)$ có dạng giống với kernel. Ví dụ, kernel
+\begin{equation}
+K = \begin{bmatrix} 1 & 0 \\ 0 & -1 \end{bmatrix}
+\end{equation}
+(toán tử Roberts cross) tính hiệu giữa điểm ảnh góc trên trái và góc dưới
+phải của mỗi patch $2 \times 2$. Ở vùng có độ sáng đồng đều, hai điểm này
+bằng nhau nên đầu ra bằng 0; ở nơi độ sáng thay đổi theo đường chéo, đầu ra
+có trị tuyệt đối lớn, và dấu cho biết phía nào sáng hơn. Kernel này vì vậy
+phát hiện các cạnh chéo trong ảnh.
+
+\textbf{Tính cục bộ và chia sẻ trọng số.} Mỗi giá trị $Y_{i,j}$ chỉ phụ thuộc
+vào một vùng lân cận nhỏ của ảnh (tính cục bộ), và cùng một kernel được dùng
+tại mọi vị trí (chia sẻ trọng số). Nhờ đó, một mẫu học được một lần sẽ được
+phát hiện ở bất kỳ đâu trong ảnh, đồng thời số tham số rất nhỏ: một kernel
+$3 \times 3$ chỉ có 9 tham số, trong khi một lớp tuyến tính
+$784 \rightarrow 100$ có $784 \cdot 100 + 100 = 78\,500$ tham số.
+
+\textbf{Kernel được học bằng gradient.} Trong mô hình, kernel là một tham số
+và được cập nhật bằng gradient descent giống trọng số của các lớp tuyến
+tính. Vì $\partial Y_{i,j} / \partial K_{a,b} = X_{i+a,\, j+b}$, theo quy tắc
+chuỗi:
+\begin{equation}
+\frac{\partial L}{\partial K_{a,b}} = \sum_{i} \sum_{j}
+\frac{\partial L}{\partial Y_{i,j}}\, X_{i+a,\, j+b}.
+\end{equation}
+Nói cách khác, gradient theo kernel chính là phép tương quan chéo giữa ảnh
+đầu vào và gradient của feature map. Để PyTorch tự tính được gradient này
+(autograd), hàm \texttt{Convolve} phải được viết hoàn toàn bằng các phép
+toán tensor.
+
+\textbf{Hàm \texttt{tensordot}.} Lời gọi \texttt{tensordot(a, b, dims=n)}
+nhân và lấy tổng theo $n$ trục cuối của \texttt{a} và $n$ trục đầu của
+\texttt{b}. Với hai ma trận cùng kích thước và $n = 2$, mọi trục đều bị lấy
+tổng nên kết quả là một số vô hướng:
+\begin{equation}
+\mathrm{tensordot}(A, B, 2) = \sum_{a} \sum_{b} A_{a,b}\, B_{a,b},
+\end{equation}
+đúng bằng phép ``nhân từng phần tử rồi cộng'' cần cho mỗi vị trí của tích
+chập.
+
+Các kiến thức còn lại (MLP với ReLU, softmax và hàm mất mát cross-entropy,
+mini-batch SGD) giống Q3 nên không trình bày lại.
+
+% Implement, công thức
+\subsubsection{Cài đặt}
+
+\textbf{Hàm \texttt{Convolve}.} Hàm nhận một ảnh $X$ và một kernel $K$, trả
+về feature map $Y$ theo các bước:
+\begin{enumerate}
+  \item Lấy kích thước $H, W$ của ảnh và $k_H, k_W$ của kernel từ thuộc tính
+  \texttt{shape}. Kích thước kernel không được cố định là $3 \times 3$, vì
+  autograder kiểm tra hàm với kernel $2 \times 2$.
+  \item Tính kích thước đầu ra theo công thức~\eqref{eq:q5_shape} và khởi tạo $Y$ bằng hàm
+  \texttt{zeros}.
+  \item Duyệt mọi vị trí $(i, j)$: cắt patch
+  $X_{i:i+k_H,\, j:j+k_W}$ rồi gán $Y_{i,j}$ bằng kết quả
+  \texttt{tensordot} của patch với kernel, \texttt{dims=2}.
+\end{enumerate}
+Kết quả của \texttt{tensordot} được gán trực tiếp dưới dạng tensor, không
+chuyển sang số thực Python (ví dụ bằng \texttt{.item()}), vì làm vậy sẽ cắt
+đồ thị tính toán và kernel sẽ không nhận được gradient. Với ảnh
+$28 \times 28$ và kernel $3 \times 3$, hàm thực hiện 676 lần lặp và
+$676 \cdot 9 = 6\,084$ phép nhân cho mỗi ảnh.
+
+\textbf{Kiến trúc.} Mô hình gồm một lớp tích chập với một kernel
+$3 \times 3$, theo sau là MLP hai lớp giống Q3:
+\begin{align}
+Y &= X \star K, & K &\in \mathbb{R}^{3 \times 3},\\
+h &= \mathrm{ReLU}(W_1\, \mathrm{vec}(Y) + b_1), & W_1 &\in \mathbb{R}^{128 \times 676},\\
+z &= W_2 h + b_2, & W_2 &\in \mathbb{R}^{10 \times 128},
+\end{align}
+trong đó $\star$ là phép tích chập ở công thức~\eqref{eq:q5_conv} và
+$\mathrm{vec}(Y) \in \mathbb{R}^{676}$ là feature map đã duỗi thành vector.
+Tổng số tham số là
+$9 + (676 \cdot 128 + 128) + (128 \cdot 10 + 10) = 87\,955$, ít hơn mô hình
+Q3 ($101\,770$) vì lớp tuyến tính đầu tiên chỉ nhận 676 thay vì 784 đầu vào.
+
+Kernel được khởi tạo bằng ma trận toàn số 1, tương đương một bộ lọc làm mờ
+(cộng 9 điểm ảnh lân cận). Mặc dù chú thích trong mã nguồn mô tả mô hình
+dùng trọng số huấn luyện sẵn, autograder thực tế gọi hàm huấn luyện, nên
+toàn bộ tham số, kể cả kernel, đều được học cùng nhau từ đầu.
+
+\textbf{Huấn luyện.} Mô hình được huấn luyện bằng hàm mất mát cross-entropy
+và SGD với learning rate $\eta = 0.01$, batch size $B = 5$, tối đa 50 epoch.
+Sau mỗi epoch, độ chính xác trên tập validation được đánh giá, và quá trình
+huấn luyện dừng sớm khi đạt 97\%. Ngưỡng này được chọn cao hơn mức 80\% của
+autograder và giữ giống Q3 để hai mô hình dễ so sánh.
+
+% Kết quả
+\subsubsection{Kết quả}
+Mô hình đạt 3/3 điểm autograder. Bảng~\ref{tab:q5_train} cho thấy quá trình
+huấn luyện: loss giảm từ 0.87 xuống 0.037 và độ chính xác trên tập validation
+tăng từ 84\% lên 98\%, nên huấn luyện dừng sau 7 epoch. Độ chính xác trên tập
+test đạt 100\%.
+\begin{table}[htbp]
+\caption{Quá trình huấn luyện mô hình convolution}
+\label{tab:q5_train}
+\centering
+\begin{tabular}{ccc}
+\toprule
+Epoch & Loss (batch cuối) & Validation accuracy \\
+\midrule
+1 & 0.8711 & 0.84 \\
+2 & 0.4165 & 0.90 \\
+3 & 0.2642 & 0.90 \\
+4 & 0.1434 & 0.92 \\
+5 & 0.0800 & 0.96 \\
+6 & 0.0535 & 0.96 \\
+7 & 0.0368 & 0.98 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Con số 100\% cần được hiểu đúng. Tập validation và tập test đều được trích
+từ 100 ảnh đầu tiên của tập huấn luyện, nên mô hình đã thấy toàn bộ các ảnh
+này trong quá trình huấn luyện. Độ chính xác 100\% vì vậy chỉ cho thấy mô
+hình khớp tốt với dữ liệu huấn luyện, chứ không đo được khả năng tổng quát
+hoá trên ảnh mới. Điều kiện dừng sớm cũng dựa trên dữ liệu đã huấn luyện vì
+lý do tương tự. Để đánh giá đúng, cần một tập test tách biệt, ví dụ tập test
+MNIST như ở Q3. Đây là hạn chế của cách autograder chia dữ liệu, không phải
+của mô hình.
+
+% Hạn chế và mở rộng
+\subsubsection{Hạn chế và mở rộng}
+\begin{itemize}
+  \item \emph{Tốc độ:} hàm \texttt{Convolve} dùng vòng lặp Python với 676 lần
+  lặp cho mỗi ảnh, nên chậm hơn nhiều so với các phép toán tensor. Có thể
+  vector hoá bằng cách xếp toàn bộ patch thành một tensor kích thước
+  $26 \times 26 \times 3 \times 3$, sau đó một lần gọi \texttt{tensordot} với
+  kernel (\texttt{dims=2}) cho ra cả feature map $26 \times 26$.
+  \item \emph{Chỉ một kernel:} mô hình chỉ phát hiện được một loại mẫu. Các
+  CNN thực tế dùng nhiều kernel ở mỗi lớp để tạo nhiều feature map, kết hợp
+  padding, stride và pooling, và xếp chồng nhiều lớp tích chập để phát hiện
+  các mẫu phức tạp dần, từ cạnh đến nét rồi đến cả chữ số.
+\end{itemize}

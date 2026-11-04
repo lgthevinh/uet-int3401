@@ -237,24 +237,39 @@ class LanguageIDModel(Module):
 
 def Convolve(input: tensor, weight: tensor):
     """
-    Acts as a convolution layer by applying a 2d convolution with the given inputs and weights.
-    DO NOT import any pytorch methods to directly do this, the convolution must be done with only the functions
-    already imported.
+    2D convolution (cross-correlation, no kernel flip) of one image with one kernel,
+    no padding and stride 1: slides `weight` over `input` and sums the element-wise
+    products at each position.
 
-    There are multiple ways to complete this function. One possible solution would be to use 'tensordot'.
-    If you would like to index a tensor, you can do it as such:
+    Inputs:
+        input: one image, shape (H x W)
+        weight: the kernel, shape (kH x kW)
+    Returns:
+        the feature map, shape ((H - kH + 1) x (W - kW + 1))
 
-    tensor[y:y+height, x:x+width]
-
-    This returns a subtensor who's first element is tensor[y,x] and has height 'height, and width 'width'
-
-    The method 'zeros((y_dim,x_dim))' may also be useful. It initializes a pytorch tensor with dimensions (y_dim, x_dim), with every value
-    set to zero.
+    Built only from tensor ops (slicing, tensordot) so autograd can backprop into
+    `weight`, which DigitConvolutionalModel trains as a Parameter.
     """
     input_tensor_dimensions = input.shape
     weight_dimensions = weight.shape
     Output_Tensor = tensor(())
     "*** YOUR CODE HERE ***"
+    # init output tensor dims
+    inp_h = input_tensor_dimensions[0]
+    inp_w = input_tensor_dimensions[1]
+    ker_h = weight_dimensions[0]
+    ker_w = weight_dimensions[1]
+
+
+    out_h = inp_h - ker_h + 1
+    out_w = inp_w - ker_w + 1
+    Output_Tensor = zeros((out_h, out_w))
+
+    # calculate the output tensor
+    for i in range(0, out_h):
+        for j in range(0, out_w):
+            patch = input[i:i+ker_h, j:j+ker_w]
+            Output_Tensor[i, j] = tensordot(patch, weight, dims=2)
 
     "*** End Code ***"
     return Output_Tensor
@@ -279,6 +294,10 @@ class DigitConvolutionalModel(Module):
 
         self.convolution_weights = Parameter(ones((3, 3)))
         """ YOUR CODE HERE """
+        input_size = 26 * 26
+        self.l1 = Linear(input_size, 128)
+        self.l2 = Linear(128, output_size)
+        
 
 
     def forward(self, x):
@@ -292,6 +311,11 @@ class DigitConvolutionalModel(Module):
         )
         x = x.flatten(start_dim=1)
         """ YOUR CODE HERE """
+        o_l1 = self.l1(x)
+        a_l1 = relu(o_l1)
+
+        o_l2 = self.l2(a_l1)
+        return o_l2
 
 
 class Attention(Module):
