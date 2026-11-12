@@ -224,7 +224,6 @@ class LanguageIDModel(Module):
                 (also called logits)
         """
         "*** YOUR CODE HERE ***"
-        print("LanguageIDModel.forward called")
         # f_initial: chỉ có ký tự đầu tiên
         h = relu(self.input_layer(xs[0]))
         # f(h, x): cộng phần ký tự hiện tại và phần hidden state trước đó
