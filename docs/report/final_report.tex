@@ -278,24 +278,40 @@ $10^{-5}$ đến $0.004$, batch size 5 và 100, số epoch 100 và 1000; đây l
 đạt ngưỡng 0.02 với ít lần lặp nhất.
 
 \subsection{Q3: Phân loại chữ số MNIST}
-\textbf{Bài toán.} Mỗi ảnh xám $28 \times 28$ của MNIST, giá trị điểm ảnh
-trong $[0, 1]$, được duỗi thành $x \in \mathbb{R}^{784}$; nhãn là vector
-one-hot $y \in \{0, 1\}^{10}$. Mô hình trả về logits $z \in \mathbb{R}^{10}$
-và dự đoán $\hat{c} = \arg\max_k z_k$. Khác Q2, đầu ra là một lớp rời rạc
-nên hàm mất mát phù hợp là cross-entropy~\eqref{eq:ce} thay cho MSE.
+\textbf{Bài toán.} Phân loại chữ số viết tay (0--9) trong ảnh xám
+$28 \times 28$ của tập MNIST~\cite{lecun} (Hình~\ref{fig:q3_samples}).
+\begin{itemize}
+  \item \emph{Đầu vào}: ảnh được duỗi thành vector $x \in \mathbb{R}^{784}$,
+  mỗi phần tử là giá trị một điểm ảnh trong $[0, 1]$.
+  \item \emph{Đầu ra}: vector logits $z \in \mathbb{R}^{10}$, mỗi phần tử là
+  điểm số của một chữ số; lớp dự đoán là $\hat{c} = \arg\max_k z_k$.
+  \item \emph{Nhãn}: vector one-hot $y \in \{0, 1\}^{10}$.
+\end{itemize}
 
-\textbf{Mô hình.} MLP hai lớp $784 \to 128 \to 10$ theo~\eqref{eq:mlp}, với
-$W_1 \in \mathbb{R}^{128 \times 784}$, $W_2 \in \mathbb{R}^{10 \times 128}$,
-tổng cộng $101\,770$ tham số. Tầng cuối không có hàm kích hoạt vì
-\texttt{cross\_entropy} nhận trực tiếp logits.
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=\columnwidth]{figures/q3_samples.pdf}
+    \caption{Mẫu dữ liệu MNIST: ảnh đầu tiên của mỗi chữ số trong tập huấn
+    luyện, kèm nhãn.}
+    \label{fig:q3_samples}
+\end{figure}
 
-\textbf{Cài đặt.} \texttt{train\_digitclassifier} dùng SGD với
-$\eta = 0.01$, batch size 5, tối đa 50 epoch, không xáo dữ liệu. Sau mỗi
-epoch, độ chính xác trên tập kiểm định (5\,000 ảnh chẵn của tập test MNIST)
-được tính một lần, và quá trình huấn luyện dừng khi đạt 97.5\%. Autograder chấm
-trên 5\,000 ảnh còn lại, không trùng với tập kiểm định; ngưỡng dừng được đặt
-cao hơn mức 97\% của autograder vì độ chính xác trên tập kiểm tra có thể thấp
-hơn tập kiểm định một chút.
+\textbf{Mô hình.} MLP hai lớp $784 \to 128 \to 10$ theo~\eqref{eq:mlp} với
+ReLU ở lớp ẩn, tổng cộng $101\,770$ tham số, huấn luyện với hàm mất mát
+cross-entropy~\eqref{eq:ce}.
+
+\textbf{Cài đặt.} Mô hình được huấn luyện bằng mini-batch SGD
+($\eta = 0.01$, batch size 5, tối đa 50 epoch) cho đến khi độ chính xác trên
+tập kiểm định đạt $97.5\%$. Mỗi epoch gồm hai bước:
+\begin{enumerate}
+  \item \emph{Huấn luyện}: với mỗi batch, tính logits, tính cross-entropy, lan
+  truyền ngược và cập nhật trọng số.
+  \item \emph{Kiểm định}: đo độ chính xác trên tập kiểm định; dừng nếu đạt
+  ngưỡng.
+\end{enumerate}
+Ngưỡng dừng được đặt cao hơn mức $97\%$ của autograder vì autograder chấm trên
+một nửa khác của tập test MNIST, nơi độ chính xác có thể thấp hơn tập kiểm
+định một chút. Khoảng dư $0.5\%$ này giúp mô hình vẫn đạt ngưỡng khi được chấm.
 
 \subsection{Q4: Nhận diện ngôn ngữ}
 \textbf{Bài toán.} Xác định một từ thuộc ngôn ngữ nào trong năm ngôn ngữ (Anh,
@@ -456,54 +472,36 @@ toàn bộ sáu bài. Nhóm đạt điểm tối đa ở mọi bài, tổng 25/2
 
 \subsection{Phân tích}
 \textbf{Q3: MSE vẫn huấn luyện được bộ phân loại, nhưng chậm.} Thay
-cross-entropy bằng MSE trên logits và nhãn one-hot, mô hình vẫn đạt 97\%:
-lớp dự đoán là $\arg\max_k z_k$, mà MSE kéo logit lớp đúng về 1 và các logit
-khác về 0, nên khi loss đủ nhỏ thì lớp đúng có logit lớn nhất. Để so sánh
-công bằng, ba mô hình xuất phát từ cùng một bộ trọng số và nhận cùng thứ tự
-batch, chỉ khác hàm mất mát và learning rate (Bảng~\ref{tab:q3_loss}).
-
-\begin{table}[!t]
-    \centering
-    \renewcommand{\arraystretch}{1.15}
-    \footnotesize
-    \caption{Cross-entropy và MSE trên Q3, cùng khởi tạo và thứ tự batch.
-    $\|g\|$: chuẩn gradient trung bình trong epoch đầu.}
-    \label{tab:q3_loss}
-    \begin{tabular}{@{}lcccc@{}}
-    \toprule
-        \textbf{Hàm mất mát} & $\boldsymbol{\eta}$ & $\|g\|$
-        & \textbf{Epoch đạt 97\%} & \textbf{Test} \\
-    \midrule
-        Cross-entropy & 0.01 & 2.31 & 5 & 97.10\% \\
-        MSE & 0.01 & 0.31 & 43 & 97.04\% \\
-        MSE & 0.05 & 0.25 & 8 & 96.76\% \\
-    \bottomrule
-    \end{tabular}
-\end{table}
+cross-entropy bằng MSE trên logits và nhãn one-hot, mô hình vẫn đạt 97\% độ
+chính xác kiểm định, vì MSE kéo logit lớp đúng về 1 và các logit khác về 0.
+Để so sánh công bằng, ba mô hình xuất phát từ cùng một bộ trọng số, nhận cùng
+thứ tự batch, chỉ khác hàm mất mát và learning rate, và dừng khi độ chính xác
+kiểm định đạt 97\% (Hình~\ref{fig:q3_race}). Ngưỡng này thấp hơn mức 97.5\%
+của lần chạy chính, nên cross-entropy dừng sớm hơn so với
+Bảng~\ref{tab:results}.
 
 \begin{figure}[!t]
     \centering
     \includegraphics[width=\columnwidth]{figures/q3_loss_race.pdf}
-    \caption{Cuộc đua giữa cross-entropy và MSE trên Q3 (đánh giá mỗi 500
-    bước): độ chính xác kiểm định, chuẩn gradient và độ dài bước cập nhật
-    $\eta \|\nabla W\|$.}
+    \caption{So sánh cross-entropy và MSE trên Q3, cùng khởi tạo và thứ tự
+    batch (đánh giá mỗi 500 bước): độ chính xác kiểm định, chuẩn gradient và
+    độ dài bước cập nhật $\eta \|\nabla W\|$.}
     \label{fig:q3_race}
 \end{figure}
 
-Với cùng $\eta = 0.01$, MSE cần 43 epoch so với 5 epoch của cross-entropy. Lý
-do chính là độ lớn gradient: PyTorch lấy trung bình MSE trên cả
+Với cùng $\eta = 0.01$, cross-entropy đạt 97\% sau khoảng 5 epoch, còn MSE
+cần khoảng 43 epoch.
+Nguyên nhân chính là độ lớn gradient: PyTorch lấy trung bình MSE trên cả
 $B \times 10$ phần tử nên
 $\partial L_{\mathrm{MSE}} / \partial z_{ik} = 2(z_{ik} - y_{ik}) / (10B)$,
 và chuẩn gradient đo được nhỏ hơn khoảng 7 lần so với cross-entropy
-(Hình~\ref{fig:q3_race}, giữa). Tăng learning rate của MSE lên 5 lần đưa độ
-dài bước cập nhật về gần với cross-entropy (Hình~\ref{fig:q3_race}, dưới) và
-rút ngắn còn 8 epoch, xác nhận phần lớn khoảng cách đến từ bước cập nhật nhỏ. Phần chênh còn lại đến từ mục tiêu
-không phù hợp: MSE coi bài toán là hồi quy về đúng 0 và 1, nên vẫn phạt một
-dự đoán đúng nhưng tự tin (ví dụ $z_c = 5$), trong khi gradient $p - y$ của
-cross-entropy chỉ lớn khi mô hình sai và tự giảm về 0 khi lớp đúng đã tách
-biệt. Độ chính xác test của MSE với $\eta = 0.05$ cũng thấp nhất. Lưu ý rằng
-nhận định ``MSE kết hợp softmax gây triệt tiêu gradient'' chỉ đúng khi MSE
-tính trên xác suất; ở đây MSE tính trên logits nên đó không phải nguyên nhân.
+(Hình~\ref{fig:q3_race}, giữa). Tăng learning rate của MSE lên 5 lần thu hẹp
+khoảng cách về độ dài bước cập nhật (Hình~\ref{fig:q3_race}, dưới) và rút
+ngắn còn khoảng 8 epoch, cho thấy phần lớn chênh lệch đến từ bước cập nhật
+nhỏ. Phần còn lại có thể do MSE không hợp với bài toán phân loại: MSE vẫn phạt
+một dự đoán đúng nhưng tự tin (ví dụ $z_c = 5$), trong khi gradient $p - y$
+của cross-entropy chỉ lớn khi mô hình dự đoán sai. Đây cũng là lý do
+cross-entropy thường được ưu tiên cho bài toán phân loại~\cite{goodfellow}.
 
 \textbf{Q4: cách duyệt dữ liệu quan trọng hơn kích thước mô hình.} Ở phiên
 bản đầu, các batch được duyệt theo thứ tự cố định từ từ ngắn đến từ dài. Sau
