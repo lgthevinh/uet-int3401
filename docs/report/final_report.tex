@@ -45,24 +45,18 @@
 \renewcommand{\refname}{Tài liệu tham khảo}
 
 \begin{abstract}
-Báo cáo trình bày bài tập lớn môn Trí tuệ nhân tạo (INT3401\_11) của nhóm,
-thực hiện Project 5: Machine Learning của học phần CS188, Đại học California,
-Berkeley. Nhóm tự cài đặt và huấn luyện bằng PyTorch sáu mô hình có độ phức
-tạp tăng dần: perceptron phân loại nhị phân, mạng truyền thẳng hồi quy hàm sin,
-mạng nhiều lớp phân loại chữ số viết tay MNIST, mạng nơ-ron hồi quy nhận diện
-ngôn ngữ của một từ, lớp tích chập tự cài đặt cho bài toán MNIST, và khối
-self-attention có mặt nạ nhân quả. Mỗi mô hình được chấm bằng autograder của
-dự án theo một ngưỡng độ chính xác hoặc giá trị mất mát.
-Nhóm đạt điểm tối đa 25/25 ở cả sáu bài, với độ chính xác test 97.68\%
-on MNIST và 84.2\% ở bài nhận diện ngôn ngữ. Thí nghiệm so sánh cho thấy MSE
-vẫn huấn luyện được bộ phân loại MNIST nhưng cần số epoch gấp khoảng 9 lần
-cross-entropy, chủ yếu do gradient nhỏ hơn.
-Mã nguồn và hướng dẫn chạy lại được công bố tại
+Báo cáo trình bày bài tập lớn môn Trí tuệ nhân tạo (INT3401\_11) của nhóm~3,
+thực hiện Project~5: Machine Learning của học phần CS188 (UC Berkeley).
+Nhóm cài đặt và huấn luyện bằng PyTorch sáu mô hình có độ phức tạp tăng
+dần theo từng Question, từ perceptron, mạng nhiều lớp, mạng nơ-ron hồi quy, tích chập đến
+self-attention, và đạt điểm tối đa 25/25 trên autograder của dự án. Báo cáo
+cũng phân tích ảnh hưởng của hàm mất mát và cách duyệt dữ liệu đến quá trình
+huấn luyện. Mã nguồn tại
 \url{https://github.com/lgthevinh/uet-int3401}.
 \end{abstract}
 
 \begin{IEEEkeywords}
-perceptron, mạng nơ-ron, MNIST, mạng nơ-ron hồi quy, tích chập, self-attention, PyTorch
+perceptron, mạng nơ-ron, MNIST, mạng nơ-ron hồi quy, tích chập, self-attention
 \end{IEEEkeywords}
 
 \begin{table}[!ht]
@@ -86,66 +80,37 @@ perceptron, mạng nơ-ron, MNIST, mạng nơ-ron hồi quy, tích chập, self-
 \section{Giới thiệu}
 \label{sec:intro}
 
-Bài tập lớn của nhóm thực hiện Project~5: Machine Learning của học phần CS188
-(Introduction to Artificial Intelligence) tại Đại học California, Berkeley,
-phiên bản PyTorch học kỳ Fall 2025~\cite{cs188}. Dự án gồm sáu bài (Q1--Q6).
-Ở mỗi bài, nhóm tự cài đặt mô hình, hàm mất mát và vòng huấn luyện trong các
-tệp \texttt{models.py}, \texttt{losses.py} và \texttt{train.py}, chỉ dùng các
-thành phần cơ bản của PyTorch~\cite{pytorch}. Kết quả được chấm bằng autograder
-đi kèm dự án theo một ngưỡng cố định cho từng bài (Bảng~\ref{tab:overview}),
-với tổng điểm tối đa là 25.
+Project~5 của CS188~\cite{cs188} gồm sáu bài (Q1--Q6) có độ phức tạp tăng dần,
+mỗi bài thêm một ý tưởng so với bài trước: từ mô hình tuyến tính (perceptron),
+thêm hàm phi tuyến để hồi quy, phân loại đa lớp trên ảnh, xử lý chuỗi có độ
+dài thay đổi, khai thác cấu trúc không gian bằng tích chập, đến self-attention.
+Ở mỗi bài, nhóm tự cài đặt mô hình, hàm mất mát và vòng huấn luyện chỉ bằng các
+phép toán tensor cơ bản của PyTorch~\cite{pytorch} thay vì dùng mô hình có sẵn,
+nhằm hiểu cách một mạng nơ-ron được xây dựng và huấn luyện. Mỗi bài được
+autograder của dự án chấm theo một ngưỡng cố định (Bảng~\ref{tab:overview}).
 
-Mục tiêu của dự án là hiểu cách một mạng nơ-ron được xây dựng và huấn luyện từ
-các phép toán tensor, thay vì dùng các mô hình có sẵn. Sáu bài được sắp theo độ
-phức tạp tăng dần, mỗi bài thêm một ý tưởng so với bài trước:
-\begin{itemize}
-  \item Q1: mô hình tuyến tính đơn giản nhất, perceptron~\cite{rosenblatt},
-  phân loại nhị phân bằng một siêu phẳng.
-  \item Q2: thêm hàm kích hoạt phi tuyến để xấp xỉ một hàm liên tục
-  ($\sin x$) bằng mạng truyền thẳng.
-  \item Q3: chuyển từ hồi quy sang phân loại đa lớp, áp dụng cho ảnh chữ số
-  viết tay MNIST~\cite{lecun}.
-  \item Q4: xử lý đầu vào có độ dài thay đổi (chuỗi ký tự) bằng mạng nơ-ron
-  hồi quy (RNN)~\cite{elman}.
-  \item Q5: khai thác cấu trúc không gian của ảnh bằng phép tích chập tự cài
-  đặt~\cite{lecun}.
-  \item Q6: cài đặt khối self-attention có mặt nạ nhân quả, thành phần cốt lõi
-  của kiến trúc Transformer~\cite{vaswani}.
-\end{itemize}
-
-\begin{table}[!t]
+\begin{table}[!ht]
     \centering
     \renewcommand{\arraystretch}{1.15}
     \footnotesize
-    \caption{Tổng quan các bài toán và điều kiện đạt của autograder.}
+    \caption{Các bài toán và điều kiện đạt của autograder. Q1, Q2 đo trên tập
+    huấn luyện; Q3--Q5 đo trên tập kiểm tra.}
     \label{tab:overview}
-    \begin{tabularx}{\columnwidth}{@{}cXXc@{}}
+    \begin{tabularx}{\columnwidth}{@{}cXlc@{}}
     \toprule
         \textbf{Bài} & \textbf{Nhiệm vụ} & \textbf{Điều kiện đạt} & \textbf{Điểm} \\
     \midrule
-        Q1 & Phân loại nhị phân bằng perceptron
-           & Độ chính xác 100\% trên tập huấn luyện & 5 \\
-        Q2 & Hồi quy $\sin x$ trên $[-2\pi, 2\pi]$
-           & Loss $\le 0.02$ trên tập huấn luyện & 5 \\
-        Q3 & Phân loại chữ số MNIST (10 lớp)
-           & Độ chính xác $\ge 97\%$ trên tập kiểm tra & 5 \\
-        Q4 & Nhận diện ngôn ngữ của một từ (5 ngôn ngữ) bằng RNN
-           & Độ chính xác $\ge 81\%$ trên tập kiểm tra & 5 \\
-        Q5 & Tích chập tự cài đặt và phân loại MNIST
-           & \texttt{Convolve} khớp phép tích chập tham chiếu; độ chính xác
-             $\ge 80\%$ trên tập kiểm tra & 3 \\
-        Q6 & Self-attention có mặt nạ nhân quả
-           & Đầu ra khớp đáp án tham chiếu & 2 \\
+        Q1 & Perceptron phân loại nhị phân & Độ chính xác 100\% & 5 \\
+        Q2 & Hồi quy $\sin x$ & Loss $\le 0.02$ & 5 \\
+        Q3 & Phân loại chữ số MNIST & Độ chính xác $\ge 97\%$ & 5 \\
+        Q4 & Nhận diện ngôn ngữ (RNN) & Độ chính xác $\ge 81\%$ & 5 \\
+        Q5 & Tích chập tự cài đặt, MNIST & Độ chính xác $\ge 80\%$ & 3 \\
+        Q6 & Self-attention nhân quả & Khớp đáp án tham chiếu & 2 \\
     \midrule
            & \textbf{Tổng} & & \textbf{25} \\
     \bottomrule
     \end{tabularx}
 \end{table}
-
-Phần còn lại của báo cáo được tổ chức như sau. Phần~\ref{sec:background} tóm
-tắt kiến thức nền tảng dùng chung cho các bài. Phần~\ref{sec:method} trình bày
-phương pháp và cách cài đặt của từng bài. Phần~\ref{sec:results} mô tả thiết
-lập thực nghiệm, kết quả và phân tích. Phần~\ref{sec:conclusion} kết luận.
 
 % ============================================================
 \section{Kiến thức nền tảng}
