@@ -342,35 +342,50 @@ giữ nguyên), độ chính xác được đo trên tập dev, trọng số t�
 dev đạt 86\%.
 
 \subsection{Q5: Tích chập}
-\textbf{Bài toán.} Tiếp tục phân loại MNIST, nhưng ảnh được đưa qua một lớp
-tích chập tự cài đặt trong hàm \texttt{Convolve}, chỉ dùng phép toán tensor
-cơ bản, không dùng \texttt{conv2d}. MLP ở Q3 duỗi ảnh thành vector nên bỏ qua
-quan hệ lân cận giữa các điểm ảnh và phải học lại cùng một mẫu ở mỗi vị trí;
-tích chập khắc phục cả hai nhờ tính cục bộ và chia sẻ trọng số~\cite{lecun}.
+\textbf{Bài toán.} Phân loại chữ số MNIST như Q3 (Hình~\ref{fig:q3_samples}),
+nhưng qua một lớp tích chập tự cài đặt trong hàm \texttt{Convolve}, chỉ dùng
+phép toán tensor cơ bản, không dùng \texttt{conv2d}.
+\begin{itemize}
+  \item \emph{Đầu vào}: ảnh $X \in \mathbb{R}^{28 \times 28}$, giữ nguyên dạng
+  ma trận thay vì duỗi thành vector như Q3.
+  \item \emph{Đầu ra}: vector logits $z \in \mathbb{R}^{10}$; nhãn là vector
+  one-hot.
+  \item \emph{Dữ liệu}: 200 ảnh đầu của tập huấn luyện MNIST. Tập kiểm định và
+  tập kiểm tra, mỗi tập 50 ảnh, lấy từ 100 ảnh đầu của chính tập này.
+\end{itemize}
 
-\textbf{Mô hình.} Với ảnh $X \in \mathbb{R}^{H \times W}$ và kernel
-$K \in \mathbb{R}^{k_H \times k_W}$, không padding và bước trượt 1:
+\textbf{Mô hình.} Với kernel $K \in \mathbb{R}^{k_H \times k_W}$, không
+padding và bước trượt 1:
 \begin{equation}
-Y_{i,j} = \sum_{a=0}^{k_H-1} \sum_{b=0}^{k_W-1} X_{i+a,\, j+b}\, K_{a,b},
+Y_{i,j} = \sum_{a=0}^{k_H-1} \sum_{b=0}^{k_W-1} X_{i+a,\, j+b}\, K_{a,b}.
 \label{eq:conv}
 \end{equation}
-cho feature map $Y \in \mathbb{R}^{(H-k_H+1) \times (W-k_W+1)}$. Đây là phép
-tương quan chéo (không lật kernel), cũng là quy ước của autograder. Kernel là
-tham số học được, với
-$\partial L / \partial K_{a,b} = \sum_{i,j} (\partial L / \partial Y_{i,j})
-X_{i+a, j+b}$. Mô hình gồm một kernel $3 \times 3$ (khởi tạo toàn 1), cho
-feature map $26 \times 26$, duỗi thành vector 676 chiều rồi qua MLP
-$676 \to 128 \to 10$ như Q3, tổng cộng $87\,955$ tham số.
+Đây là phép tương quan chéo (không lật kernel), cũng là quy ước của
+autograder. Mô hình gồm một kernel $3 \times 3$ học được, khởi tạo toàn 1, cho
+feature map $26 \times 26$ (Hình~\ref{fig:q5_kernel}); feature map được duỗi
+thành vector 676 chiều rồi qua MLP $676 \to 128 \to 10$ như Q3, tổng cộng
+$87\,955$ tham số. Về thiết kế, kernel trượt trên ảnh cho phép mô hình nhận ra
+cùng một mẫu cục bộ ở mọi vị trí với cùng bộ trọng số~\cite{lecun}.
 
-\textbf{Cài đặt.} \texttt{Convolve} đọc kích thước ảnh và kernel từ
-\texttt{shape} (không cố định $3 \times 3$, vì autograder kiểm tra với kernel
-$2 \times 2$), khởi tạo $Y$ bằng \texttt{zeros}, rồi với mỗi vị trí $(i, j)$
-gán $Y_{i,j}$ bằng \texttt{tensordot} của patch với kernel, \texttt{dims=2}.
-Kết quả được giữ ở dạng tensor, không chuyển sang số Python bằng
-\texttt{.item()}, để không cắt đồ thị tính toán và kernel vẫn nhận được
-gradient. \texttt{Train\_DigitConvolution} dùng SGD với $\eta = 0.01$,
-batch size 5 như Q3, và dừng khi độ chính xác kiểm định đạt 97\%, cao hơn
-nhiều so với mức 80\% autograder yêu cầu.
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=\columnwidth]{figures/q5_kernel.pdf}
+    \caption{Tích chập ở Q5: patch $3 \times 3$ của ảnh (khung đỏ, trái) nhân
+    với kernel đã học (giữa) cho một điểm của feature map (khung đỏ, phải).}
+    \label{fig:q5_kernel}
+\end{figure}
+
+\textbf{Cài đặt.} \texttt{Convolve} gồm ba bước:
+\begin{enumerate}
+  \item Đọc kích thước ảnh và kernel từ \texttt{shape}, không cố định
+  $3 \times 3$, vì autograder kiểm tra với kernel $2 \times 2$.
+  \item Khởi tạo $Y$ bằng \texttt{zeros}, rồi với mỗi vị trí $(i, j)$ gán
+  $Y_{i,j}$ bằng \texttt{tensordot} của patch với kernel.
+  \item Giữ kết quả ở dạng tensor, không chuyển sang số Python bằng
+  \texttt{.item()}, để kernel vẫn nhận được gradient.
+\end{enumerate}
+Mô hình được huấn luyện bằng mini-batch SGD ($\eta = 0.01$, batch size 5,
+tối đa 50 epoch) cho đến khi đúng ít nhất 49/50 ảnh kiểm định ($\ge 97\%$).
 
 \subsection{Q6: Self-attention có mặt nạ nhân quả}
 \textbf{Bài toán.} Cài đặt khối self-attention một đầu, thành phần cốt lõi
@@ -438,7 +453,7 @@ Bảng~\ref{tab:hparams} tóm tắt siêu tham số. Q6 không có huấn luyệ
         Q2 & SGD & 0.01 & 10 & hết 499 epoch \\
         Q3 & SGD & 0.01 & 5 & độ chính xác kiểm định $\ge 97.5\%$ (tối đa 50 epoch) \\
         Q4 & Adam & 0.001 & 64 & độ chính xác dev $\ge 86\%$ (tối đa 50 epoch) \\
-        Q5 & SGD & 0.01 & 5 & độ chính xác kiểm định $\ge 97\%$ (tối đa 50 epoch) \\
+        Q5 & SGD & 0.01 & 5 & đúng $\ge 49/50$ ảnh kiểm định (tối đa 50 epoch) \\
     \bottomrule
     \end{tabularx}
 \end{table}
@@ -517,14 +532,14 @@ và tăng số epoch tối đa từ 30 lên 50, sáu lần chạy độc lập �
 (trung bình 83.1\%), đều vượt ngưỡng 81\%. Khoảng chênh khoảng 2 điểm phần
 trăm so với 85.2\% chính là phần lạc quan do chọn mô hình trên tập test.
 
-\textbf{Q5: con số 100\% cần được hiểu đúng.} Loss của batch cuối giảm từ
-0.89 xuống 0.053 và độ chính xác kiểm định tăng từ 84\% lên 98\% sau 5 epoch. Tuy nhiên tập
-kiểm định và tập kiểm tra đều lấy từ ảnh mà mô hình đã huấn luyện, nên 100\%
-chỉ cho thấy mô hình khớp tốt dữ liệu huấn luyện, không đo được khả năng tổng
-quát hoá. Đây là hạn chế của cách chia dữ liệu trong autograder, không phải
-của mô hình. So với Q3, mô hình tích chập có ít tham số hơn ($87\,955$ so
-với $101\,770$) nhưng huấn luyện chậm hơn rõ rệt vì \texttt{Convolve} dùng
-vòng lặp Python.
+\textbf{Q5: 100\% không đo khả năng tổng quát hoá, và kernel gần như không
+học.} Độ chính xác kiểm định tăng từ 84\% lên 98\% (49/50 ảnh) sau 5 epoch, và
+mô hình đúng cả 50 ảnh kiểm tra. Tuy nhiên tập kiểm định và tập kiểm tra đều
+lấy từ ảnh mô hình đã huấn luyện, nên 100\% chỉ cho thấy mô hình khớp dữ liệu
+huấn luyện. Ngoài ra, sau huấn luyện kernel chỉ còn trong khoảng 1.05--1.10
+(Hình~\ref{fig:q5_kernel}), gần như giữ nguyên giá trị khởi tạo: lớp tích chập
+chỉ làm mờ ảnh, còn việc phân loại do MLP phía sau đảm nhận. Với một kernel,
+200 ảnh và vài epoch, lợi ích của tích chập nêu ở trên chưa thể hiện được.
 
 \textbf{Q6: kiểm tra tính đúng.} Q6 không có huấn luyện; autograder so đầu
 ra với đáp án bằng \texttt{torch.isclose}. Khi gỡ lỗi, hai tính chất của ma
@@ -546,7 +561,7 @@ dạng tensor để autograd hoạt động (Q5) ảnh hưởng đến kết qu�
 trúc mô hình.
 
 \textbf{Hạn chế.} \texttt{Convolve} dùng vòng lặp Python (676 lần lặp mỗi
-ảnh) và chỉ có một kernel; Q4 dùng RNN thuần và chỉ vượt ngưỡng với biên
+ảnh) và chỉ có một kernel, gần như không thay đổi sau huấn luyện; Q4 dùng RNN thuần và chỉ vượt ngưỡng với biên
 khoảng 1--3 điểm phần trăm; Q6 là attention một đầu; tập kiểm định và kiểm tra của Q5 lấy từ
 tập huấn luyện nên không đo được khả năng tổng quát hoá.
 
