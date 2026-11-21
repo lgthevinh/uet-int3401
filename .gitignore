@@ -2,3 +2,9 @@
 __pycache__/
 
 .vscode/
+.idea/
+*.aux
+*.log
+*.synctex.gz
+docs/report/*.pdf
+*.pt
