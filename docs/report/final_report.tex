@@ -46,24 +46,18 @@
 \renewcommand{\refname}{Tài liệu tham khảo}
 
 \begin{abstract}
-Báo cáo trình bày bài tập lớn môn Trí tuệ nhân tạo (INT3401\_11) của nhóm,
-thực hiện Project 5: Machine Learning của học phần CS188, Đại học California,
-Berkeley. Nhóm tự cài đặt và huấn luyện bằng PyTorch sáu mô hình có độ phức
-tạp tăng dần: perceptron phân loại nhị phân, mạng truyền thẳng hồi quy hàm sin,
-mạng nhiều lớp phân loại chữ số viết tay MNIST, mạng nơ-ron hồi quy nhận diện
-ngôn ngữ của một từ, lớp tích chập tự cài đặt cho bài toán MNIST, và khối
-self-attention có mặt nạ nhân quả. Mỗi mô hình được chấm bằng autograder của
-dự án theo một ngưỡng độ chính xác hoặc giá trị mất mát.
-Nhóm đạt điểm tối đa 25/25 ở cả sáu bài, với độ chính xác test 97.68\%
-on MNIST và 84.2\% ở bài nhận diện ngôn ngữ. Thí nghiệm so sánh cho thấy MSE
-vẫn huấn luyện được bộ phân loại MNIST nhưng cần số epoch gấp khoảng 9 lần
-cross-entropy, chủ yếu do gradient nhỏ hơn.
-Mã nguồn và hướng dẫn chạy lại được công bố tại
+Báo cáo trình bày bài tập lớn môn Trí tuệ nhân tạo (INT3401\_11) của nhóm~3,
+thực hiện Project~5: Machine Learning của học phần CS188 (UC Berkeley).
+Nhóm cài đặt và huấn luyện bằng PyTorch sáu mô hình có độ phức tạp tăng
+dần theo từng Question, từ perceptron, mạng nhiều lớp, mạng nơ-ron hồi quy, tích chập đến
+self-attention, và đạt điểm tối đa 25/25 trên autograder của dự án. Báo cáo
+cũng phân tích ảnh hưởng của hàm mất mát và cách duyệt dữ liệu đến quá trình
+huấn luyện. Mã nguồn tại
 \url{https://github.com/lgthevinh/uet-int3401}.
 \end{abstract}
 
 \begin{IEEEkeywords}
-perceptron, mạng nơ-ron, MNIST, mạng nơ-ron hồi quy, tích chập, self-attention, PyTorch
+perceptron, mạng nơ-ron, MNIST, mạng nơ-ron hồi quy, tích chập, self-attention
 \end{IEEEkeywords}
 
 \begin{table}[!ht]
@@ -87,66 +81,37 @@ perceptron, mạng nơ-ron, MNIST, mạng nơ-ron hồi quy, tích chập, self-
 \section{Giới thiệu}
 \label{sec:intro}
 
-Bài tập lớn của nhóm thực hiện Project~5: Machine Learning của học phần CS188
-(Introduction to Artificial Intelligence) tại Đại học California, Berkeley,
-phiên bản PyTorch học kỳ Fall 2025~\cite{cs188}. Dự án gồm sáu bài (Q1--Q6).
-Ở mỗi bài, nhóm tự cài đặt mô hình, hàm mất mát và vòng huấn luyện trong các
-tệp \texttt{models.py}, \texttt{losses.py} và \texttt{train.py}, chỉ dùng các
-thành phần cơ bản của PyTorch~\cite{pytorch}. Kết quả được chấm bằng autograder
-đi kèm dự án theo một ngưỡng cố định cho từng bài (Bảng~\ref{tab:overview}),
-với tổng điểm tối đa là 25.
+Project~5 của CS188~\cite{cs188} gồm sáu bài (Q1--Q6) có độ phức tạp tăng dần,
+mỗi bài thêm một ý tưởng so với bài trước: từ mô hình tuyến tính (perceptron),
+thêm hàm phi tuyến để hồi quy, phân loại đa lớp trên ảnh, xử lý chuỗi có độ
+dài thay đổi, khai thác cấu trúc không gian bằng tích chập, đến self-attention.
+Ở mỗi bài, nhóm tự cài đặt mô hình, hàm mất mát và vòng huấn luyện chỉ bằng các
+phép toán tensor cơ bản của PyTorch~\cite{pytorch} thay vì dùng mô hình có sẵn,
+nhằm hiểu cách một mạng nơ-ron được xây dựng và huấn luyện. Mỗi bài được
+autograder của dự án chấm theo một ngưỡng cố định (Bảng~\ref{tab:overview}).
 
-Mục tiêu của dự án là hiểu cách một mạng nơ-ron được xây dựng và huấn luyện từ
-các phép toán tensor, thay vì dùng các mô hình có sẵn. Sáu bài được sắp theo độ
-phức tạp tăng dần, mỗi bài thêm một ý tưởng so với bài trước:
-\begin{itemize}
-  \item Q1: mô hình tuyến tính đơn giản nhất, perceptron~\cite{rosenblatt},
-  phân loại nhị phân bằng một siêu phẳng.
-  \item Q2: thêm hàm kích hoạt phi tuyến để xấp xỉ một hàm liên tục
-  ($\sin x$) bằng mạng truyền thẳng.
-  \item Q3: chuyển từ hồi quy sang phân loại đa lớp, áp dụng cho ảnh chữ số
-  viết tay MNIST~\cite{lecun}.
-  \item Q4: xử lý đầu vào có độ dài thay đổi (chuỗi ký tự) bằng mạng nơ-ron
-  hồi quy (RNN)~\cite{elman}.
-  \item Q5: khai thác cấu trúc không gian của ảnh bằng phép tích chập tự cài
-  đặt~\cite{lecun}.
-  \item Q6: cài đặt khối self-attention có mặt nạ nhân quả, thành phần cốt lõi
-  của kiến trúc Transformer~\cite{vaswani}.
-\end{itemize}
-
-\begin{table}[!t]
+\begin{table}[!ht]
     \centering
     \renewcommand{\arraystretch}{1.15}
     \footnotesize
-    \caption{Tổng quan các bài toán và điều kiện đạt của autograder.}
+    \caption{Các bài toán và điều kiện đạt của autograder. Q1, Q2 đo trên tập
+    huấn luyện; Q3--Q5 đo trên tập kiểm tra.}
     \label{tab:overview}
-    \begin{tabularx}{\columnwidth}{@{}cXXc@{}}
+    \begin{tabularx}{\columnwidth}{@{}cXlc@{}}
     \toprule
         \textbf{Bài} & \textbf{Nhiệm vụ} & \textbf{Điều kiện đạt} & \textbf{Điểm} \\
     \midrule
-        Q1 & Phân loại nhị phân bằng perceptron
-           & Độ chính xác 100\% trên tập huấn luyện & 5 \\
-        Q2 & Hồi quy $\sin x$ trên $[-2\pi, 2\pi]$
-           & Loss $\le 0.02$ trên tập huấn luyện & 5 \\
-        Q3 & Phân loại chữ số MNIST (10 lớp)
-           & Độ chính xác $\ge 97\%$ trên tập kiểm tra & 5 \\
-        Q4 & Nhận diện ngôn ngữ của một từ (5 ngôn ngữ) bằng RNN
-           & Độ chính xác $\ge 81\%$ trên tập kiểm tra & 5 \\
-        Q5 & Tích chập tự cài đặt và phân loại MNIST
-           & \texttt{Convolve} khớp phép tích chập tham chiếu; độ chính xác
-             $\ge 80\%$ trên tập kiểm tra & 3 \\
-        Q6 & Self-attention có mặt nạ nhân quả
-           & Đầu ra khớp đáp án tham chiếu & 2 \\
+        Q1 & Perceptron phân loại nhị phân & Độ chính xác 100\% & 5 \\
+        Q2 & Hồi quy $\sin x$ & Loss $\le 0.02$ & 5 \\
+        Q3 & Phân loại chữ số MNIST & Độ chính xác $\ge 97\%$ & 5 \\
+        Q4 & Nhận diện ngôn ngữ (RNN) & Độ chính xác $\ge 81\%$ & 5 \\
+        Q5 & Tích chập tự cài đặt, MNIST & Độ chính xác $\ge 80\%$ & 3 \\
+        Q6 & Self-attention nhân quả & Khớp đáp án tham chiếu & 2 \\
     \midrule
            & \textbf{Tổng} & & \textbf{25} \\
     \bottomrule
     \end{tabularx}
 \end{table}
-
-Phần còn lại của báo cáo được tổ chức như sau. Phần~\ref{sec:background} tóm
-tắt kiến thức nền tảng dùng chung cho các bài. Phần~\ref{sec:method} trình bày
-phương pháp và cách cài đặt của từng bài. Phần~\ref{sec:results} mô tả thiết
-lập thực nghiệm, kết quả và phân tích. Phần~\ref{sec:conclusion} kết luận.
 
 % ============================================================
 \section{Kiến thức nền tảng}
@@ -243,8 +208,10 @@ bài sau vì vậy chỉ khác nhau ở mô hình và hàm mất mát.
 \subsection{Đánh giá và khả năng tổng quát hoá}
 Dữ liệu được chia thành tập huấn luyện (train) để cập nhật tham số, tập kiểm
 định (validation) để theo dõi quá trình huấn luyện và chọn mô hình, và tập
-kiểm tra (test) để đánh giá cuối cùng. Một mô hình có thể đạt loss rất thấp
-trên tập huấn luyện nhưng dự đoán kém trên dữ liệu mới (overfitting), nên quá
+kiểm tra (test) để đánh giá cuối cùng. Nếu mô hình quá đơn giản hoặc chưa hội
+tụ, sai số cao trên cả tập huấn luyện lẫn tập kiểm định (underfitting). Ngược
+lại, một mô hình có thể đạt loss rất thấp trên tập huấn luyện nhưng dự đoán
+kém trên dữ liệu mới (overfitting), nên quá
 trình huấn luyện được theo dõi bằng độ chính xác trên tập kiểm định và dừng
 sớm (early stopping) khi đạt ngưỡng. Tập kiểm tra chỉ phản ánh đúng khả năng
 tổng quát hoá khi không được dùng trong bất kỳ quyết định nào của quá trình
@@ -335,25 +302,41 @@ nhất.
 \end{figure}
 
 \subsection{Q3: Phân loại chữ số MNIST}
-\textbf{Bài toán.} Mỗi ảnh xám $28 \times 28$ của MNIST, giá trị điểm ảnh
-trong $[0, 1]$, được duỗi thành $x \in \mathbb{R}^{784}$; nhãn là vector
-one-hot $y \in \{0, 1\}^{10}$. Mô hình trả về logits $z \in \mathbb{R}^{10}$
-và dự đoán $\hat{c} = \arg\max_k z_k$. Khác Q2, đầu ra là một lớp rời rạc
-nên hàm mất mát phù hợp là cross-entropy~\eqref{eq:ce} thay cho MSE.
+\textbf{Bài toán.} Phân loại chữ số viết tay (0--9) trong ảnh xám
+$28 \times 28$ của tập MNIST~\cite{lecun} (Hình~\ref{fig:q3_samples}).
+\begin{itemize}
+  \item \emph{Đầu vào}: ảnh được duỗi thành vector $x \in \mathbb{R}^{784}$,
+  mỗi phần tử là giá trị một điểm ảnh trong $[0, 1]$.
+  \item \emph{Đầu ra}: vector logits $z \in \mathbb{R}^{10}$, mỗi phần tử là
+  điểm số của một chữ số; lớp dự đoán là $\hat{c} = \arg\max_k z_k$.
+  \item \emph{Nhãn}: vector one-hot $y \in \{0, 1\}^{10}$.
+\end{itemize}
 
-\textbf{Mô hình.} MLP hai lớp $784 \to 128 \to 10$ theo~\eqref{eq:mlp}, với
-$W_1 \in \mathbb{R}^{128 \times 784}$, $W_2 \in \mathbb{R}^{10 \times 128}$,
-tổng cộng $101\,770$ tham số. Tầng cuối không có hàm kích hoạt vì
-\texttt{cross\_entropy} nhận trực tiếp logits.
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=\columnwidth]{figures/q3_samples.pdf}
+    \caption{Mẫu dữ liệu MNIST: ảnh đầu tiên của mỗi chữ số trong tập huấn
+    luyện, kèm nhãn.}
+    \label{fig:q3_samples}
+\end{figure}
+
+\textbf{Mô hình.} MLP hai lớp $784 \to 128 \to 10$ theo~\eqref{eq:mlp} với
+ReLU ở lớp ẩn, tổng cộng $101\,770$ tham số, huấn luyện với hàm mất mát
+cross-entropy~\eqref{eq:ce}.
 
 \textbf{Cài đặt.} Hình~\ref{fig:q3_impl} cho thấy một batch đi qua mô hình
-rồi cập nhật trọng số, sau đó kiểm tra điều kiện dừng ở cuối epoch.
-\texttt{train\_digitclassifier} dùng SGD với $\eta = 0.01$, batch size 5, tối
-đa 50 epoch, không xáo dữ liệu. Sau mỗi epoch, độ chính xác trên tập kiểm định
-(5\,000 ảnh chẵn của tập test MNIST) được tính một lần, và quá trình huấn luyện
-dừng khi đạt 97.5\%. Autograder chấm trên 5\,000 ảnh còn lại, không trùng với
-tập kiểm định; ngưỡng dừng được đặt cao hơn mức 97\% của autograder vì độ chính
-xác trên tập kiểm tra có thể thấp hơn tập kiểm định một chút.
+rồi cập nhật trọng số, sau đó kiểm tra điều kiện dừng ở cuối epoch. Mô hình được huấn luyện bằng mini-batch SGD
+($\eta = 0.01$, batch size 5, tối đa 50 epoch) cho đến khi độ chính xác trên
+tập kiểm định đạt $97.5\%$. Mỗi epoch gồm hai bước:
+\begin{enumerate}
+  \item \emph{Huấn luyện}: với mỗi batch, tính logits, tính cross-entropy, lan
+  truyền ngược và cập nhật trọng số.
+  \item \emph{Kiểm định}: đo độ chính xác trên tập kiểm định; dừng nếu đạt
+  ngưỡng.
+\end{enumerate}
+Ngưỡng dừng được đặt cao hơn mức $97\%$ của autograder vì autograder chấm trên
+một nửa khác của tập test MNIST, nơi độ chính xác có thể thấp hơn tập kiểm
+định một chút. Khoảng dư $0.5\%$ này giúp mô hình vẫn đạt ngưỡng khi được chấm.
 \begin{figure}[H]
     \centering
     \includegraphics[width=\columnwidth]{../ImagineReport/q3_fig_impl.png}
@@ -399,36 +382,50 @@ và quá trình dừng sớm khi độ chính xác đạt 86\%.
 \end{figure}
 
 \subsection{Q5: Tích chập}
-\textbf{Bài toán.} Tiếp tục phân loại MNIST, nhưng ảnh được đưa qua một lớp
-tích chập tự cài đặt trong hàm \texttt{Convolve}, chỉ dùng phép toán tensor
-cơ bản, không dùng \texttt{conv2d}. MLP ở Q3 duỗi ảnh thành vector nên bỏ qua
-quan hệ lân cận giữa các điểm ảnh và phải học lại cùng một mẫu ở mỗi vị trí;
-tích chập khắc phục cả hai nhờ tính cục bộ và chia sẻ trọng số~\cite{lecun}.
+\textbf{Bài toán.} Phân loại chữ số MNIST như Q3 (Hình~\ref{fig:q3_samples}),
+nhưng qua một lớp tích chập tự cài đặt trong hàm \texttt{Convolve}, chỉ dùng
+phép toán tensor cơ bản, không dùng \texttt{conv2d}.
+\begin{itemize}
+  \item \emph{Đầu vào}: ảnh $X \in \mathbb{R}^{28 \times 28}$, giữ nguyên dạng
+  ma trận thay vì duỗi thành vector như Q3.
+  \item \emph{Đầu ra}: vector logits $z \in \mathbb{R}^{10}$; nhãn là vector
+  one-hot.
+  \item \emph{Dữ liệu}: 200 ảnh đầu của tập huấn luyện MNIST. Tập kiểm định và
+  tập kiểm tra, mỗi tập 50 ảnh, lấy từ 100 ảnh đầu của chính tập này.
+\end{itemize}
 
-\textbf{Mô hình.} Với ảnh $X \in \mathbb{R}^{H \times W}$ và kernel
-$K \in \mathbb{R}^{k_H \times k_W}$, không padding và bước trượt 1:
+\textbf{Mô hình.} Với kernel $K \in \mathbb{R}^{k_H \times k_W}$, không
+padding và bước trượt 1:
 \begin{equation}
-Y_{i,j} = \sum_{a=0}^{k_H-1} \sum_{b=0}^{k_W-1} X_{i+a,\, j+b}\, K_{a,b},
+Y_{i,j} = \sum_{a=0}^{k_H-1} \sum_{b=0}^{k_W-1} X_{i+a,\, j+b}\, K_{a,b}.
 \label{eq:conv}
 \end{equation}
-cho feature map $Y \in \mathbb{R}^{(H-k_H+1) \times (W-k_W+1)}$. Đây là phép
-tương quan chéo (không lật kernel), cũng là quy ước của autograder. Kernel là
-tham số học được, với
-$\partial L / \partial K_{a,b} = \sum_{i,j} (\partial L / \partial Y_{i,j})
-X_{i+a, j+b}$. Mô hình gồm một kernel $3 \times 3$ (khởi tạo toàn 1), cho
-feature map $26 \times 26$, duỗi thành vector 676 chiều rồi qua MLP
-$676 \to 128 \to 10$ như Q3, tổng cộng $87\,955$ tham số.
+Đây là phép tương quan chéo (không lật kernel), cũng là quy ước của
+autograder. Mô hình gồm một kernel $3 \times 3$ học được, khởi tạo toàn 1, cho
+feature map $26 \times 26$ (Hình~\ref{fig:q5_kernel}); feature map được duỗi
+thành vector 676 chiều rồi qua MLP $676 \to 128 \to 10$ như Q3, tổng cộng
+$87\,955$ tham số. Về thiết kế, kernel trượt trên ảnh cho phép mô hình nhận ra
+cùng một mẫu cục bộ ở mọi vị trí với cùng bộ trọng số~\cite{lecun}.
 
-\textbf{Cài đặt.} \texttt{Convolve} đọc kích thước ảnh và kernel từ
-\texttt{shape} (không cố định $3 \times 3$, vì autograder kiểm tra với kernel
-$2 \times 2$), khởi tạo $Y$ bằng \texttt{zeros}, rồi với mỗi vị trí $(i, j)$
-gán $Y_{i,j}$ bằng \texttt{tensordot} của patch với kernel, \texttt{dims=2}
-(Hình~\ref{fig:q5_impl}). Kết quả được giữ ở dạng tensor, không chuyển sang số
-Python bằng \texttt{.item()}, để không cắt đồ thị tính toán và kernel vẫn nhận
-được gradient. Feature map sau đó được duỗi và đi qua MLP như Q3.
-\texttt{Train\_DigitConvolution} dùng SGD với $\eta = 0.01$, batch size 5 như
-Q3, và dừng khi độ chính xác kiểm định đạt 97\%, cao hơn nhiều so với mức 80\%
-autograder yêu cầu.
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=\columnwidth]{figures/q5_kernel.pdf}
+    \caption{Tích chập ở Q5: patch $3 \times 3$ của ảnh (khung đỏ, trái) nhân
+    với kernel đã học (giữa) cho một điểm của feature map (khung đỏ, phải).}
+    \label{fig:q5_kernel}
+\end{figure}
+
+\textbf{Cài đặt.} \texttt{Convolve} gồm ba bước (Hình~\ref{fig:q5_impl}):
+\begin{enumerate}
+  \item Đọc kích thước ảnh và kernel từ \texttt{shape}, không cố định
+  $3 \times 3$, vì autograder kiểm tra với kernel $2 \times 2$.
+  \item Khởi tạo $Y$ bằng \texttt{zeros}, rồi với mỗi vị trí $(i, j)$ gán
+  $Y_{i,j}$ bằng \texttt{tensordot} của patch với kernel.
+  \item Giữ kết quả ở dạng tensor, không chuyển sang số Python bằng
+  \texttt{.item()}, để kernel vẫn nhận được gradient.
+\end{enumerate}
+Mô hình được huấn luyện bằng mini-batch SGD ($\eta = 0.01$, batch size 5,
+tối đa 50 epoch) cho đến khi đúng ít nhất 49/50 ảnh kiểm định ($\ge 97\%$).
 \begin{figure}[H]
     \centering
     \includegraphics[width=\columnwidth]{../ImagineReport/q5_fig_impl.png}
@@ -450,7 +447,8 @@ S = \frac{QK^{\top}}{\sqrt{d_k}}, \quad
 \tilde{S}_{ij} = \begin{cases} S_{ij} & j \le i \\ -\infty & j > i \end{cases},
 \quad O = \mathrm{softmax}(\tilde{S})\,V,
 \end{equation}
-với $d_k = C$ và softmax lấy theo hàng. Chia cho $\sqrt{d_k}$ đưa phương sai
+với $d_k = C$, phép chuyển vị $K^{\top}$ thực hiện trên hai chiều cuối
+$(T, C) \to (C, T)$ và softmax lấy theo hàng. Chia cho $\sqrt{d_k}$ đưa phương sai
 của tích vô hướng về khoảng 1, tránh softmax bão hoà khi $C$ lớn. Mặt nạ phải
 được áp \emph{trước} softmax: vì $e^{-\infty} = 0$, các vị trí tương lai có
 trọng số đúng bằng 0 mà mỗi hàng vẫn có tổng bằng 1; nhân mặt nạ sau softmax
@@ -508,7 +506,7 @@ Bảng~\ref{tab:hparams} tóm tắt siêu tham số. Q6 không có huấn luyệ
         Q2 & SGD & 0.01 & 10 & hết 499 epoch \\
         Q3 & SGD & 0.01 & 5 & độ chính xác kiểm định $\ge 97.5\%$ (tối đa 50 epoch) \\
         Q4 & Adam & 0.001 & 64 & độ chính xác dev $\ge 86\%$ (tối đa 50 epoch) \\
-        Q5 & SGD & 0.01 & 5 & độ chính xác kiểm định $\ge 97\%$ (tối đa 50 epoch) \\
+        Q5 & SGD & 0.01 & 5 & đúng $\ge 49/50$ ảnh kiểm định (tối đa 50 epoch) \\
     \bottomrule
     \end{tabularx}
 \end{table}
@@ -556,49 +554,37 @@ $\eta = 0.01$, batch 10, bộ được chọn sau khi thử nhiều giá trị (
 Vì chỉ đo MSE trên chính 200 điểm huấn luyện, kết quả này không cho biết mô hình
 nội suy tốt giữa các điểm.
 
-\textbf{Q3: MSE học được nhưng chậm hơn cross-entropy.} Thay
-cross-entropy bằng MSE trên logits và nhãn one-hot, mô hình vẫn đạt 97\% vì MSE
-kéo logit lớp đúng về 1 và các logit còn lại về 0, nên $\arg\max_k z_k$ vẫn
-đúng. Ba mô hình dùng cùng trọng số khởi tạo và thứ tự batch, chỉ khác mất mát
-và learning rate (Bảng~\ref{tab:q3_loss}, Hình~\ref{fig:q3_race}).
-
-\begin{table}[H]
-    \centering
-    \renewcommand{\arraystretch}{1.15}
-    \footnotesize
-    \caption{Cross-entropy và MSE trên Q3, cùng khởi tạo và thứ tự batch.
-    $\|g\|$: chuẩn gradient trung bình trong epoch đầu.}
-    \label{tab:q3_loss}
-    \begin{tabular}{@{}lcccc@{}}
-    \toprule
-        \textbf{Hàm mất mát} & $\boldsymbol{\eta}$ & $\|g\|$
-        & \textbf{Epoch đạt 97\%} & \textbf{Test} \\
-    \midrule
-        Cross-entropy & 0.01 & 2.31 & 5 & 97.10\% \\
-        MSE & 0.01 & 0.31 & 43 & 97.04\% \\
-        MSE & 0.05 & 0.25 & 8 & 96.76\% \\
-    \bottomrule
-    \end{tabular}
-\end{table}
+\textbf{Q3: MSE vẫn huấn luyện được bộ phân loại, nhưng chậm.} Thay
+cross-entropy bằng MSE trên logits và nhãn one-hot, mô hình vẫn đạt 97\% độ
+chính xác kiểm định, vì MSE kéo logit lớp đúng về 1 và các logit khác về 0.
+Để so sánh công bằng, ba mô hình xuất phát từ cùng một bộ trọng số, nhận cùng
+thứ tự batch, chỉ khác hàm mất mát và learning rate, và dừng khi độ chính xác
+kiểm định đạt 97\% (Hình~\ref{fig:q3_race}). Ngưỡng này thấp hơn mức 97.5\%
+của lần chạy chính, nên cross-entropy dừng sớm hơn so với
+Bảng~\ref{tab:results}.
 
 \begin{figure}[!t]
     \centering
     \includegraphics[width=\columnwidth]{figures/q3_loss_race.pdf}
-    \caption{Cuộc đua giữa cross-entropy và MSE trên Q3 (đánh giá mỗi 500
-    bước): độ chính xác kiểm định, chuẩn gradient và độ dài bước cập nhật
-    $\eta \|\nabla W\|$.}
+    \caption{So sánh cross-entropy và MSE trên Q3, cùng khởi tạo và thứ tự
+    batch (đánh giá mỗi 500 bước): độ chính xác kiểm định, chuẩn gradient và
+    độ dài bước cập nhật $\eta \|\nabla W\|$.}
     \label{fig:q3_race}
 \end{figure}
 
-Với cùng $\eta = 0.01$, MSE cần 43 epoch so với 5 epoch. Lý do thứ nhất
-là độ lớn gradient: MSE được lấy trung bình trên $B \times 10$ phần tử nên
-$\partial L / \partial z_{ik} = 2(z_{ik} - y_{ik}) / (10B)$, chuẩn gradient đo
-được nhỏ hơn khoảng 7 lần; tăng $\eta$ lên 0.05 bù lại phần này và rút còn 8
-epoch. Lý do thứ hai là mục tiêu: MSE vẫn phạt dự đoán đúng nhưng ``quá tự
-tin'', còn gradient $p - y$ của cross-entropy tự giảm về 0 khi lớp đúng đã tách
-biệt~\cite{goodfellow}, và MSE với $\eta = 0.05$ có độ chính xác test thấp nhất
-(96.76\%). Hiện tượng bão hoà gradient của MSE~\cite{goodfellow} chỉ xảy ra khi
-MSE tính trên xác suất sau softmax, không phải trường hợp này.
+Với cùng $\eta = 0.01$, cross-entropy đạt 97\% sau khoảng 5 epoch, còn MSE
+cần khoảng 43 epoch.
+Nguyên nhân chính là độ lớn gradient: PyTorch lấy trung bình MSE trên cả
+$B \times 10$ phần tử nên
+$\partial L_{\mathrm{MSE}} / \partial z_{ik} = 2(z_{ik} - y_{ik}) / (10B)$,
+và chuẩn gradient đo được nhỏ hơn khoảng 7 lần so với cross-entropy
+(Hình~\ref{fig:q3_race}, giữa). Tăng learning rate của MSE lên 5 lần thu hẹp
+khoảng cách về độ dài bước cập nhật (Hình~\ref{fig:q3_race}, dưới) và rút
+ngắn còn khoảng 8 epoch, cho thấy phần lớn chênh lệch đến từ bước cập nhật
+nhỏ. Phần còn lại có thể do MSE không hợp với bài toán phân loại: MSE vẫn phạt
+một dự đoán đúng nhưng tự tin (ví dụ $z_c = 5$), trong khi gradient $p - y$
+của cross-entropy chỉ lớn khi mô hình dự đoán sai. Đây cũng là lý do
+cross-entropy thường được ưu tiên cho bài toán phân loại~\cite{goodfellow}.
 
 \textbf{Q4: overfitting và chọn mô hình theo tập dev.} Ban đầu các batch
 được duyệt theo thứ tự cố định từ từ ngắn đến từ dài; sau 30 epoch loss chỉ còn
@@ -611,14 +597,14 @@ sang tập dev và tăng số epoch tối đa lên 50, sáu lần chạy độc 
 82.0--84.4\% (trung bình 83.1\%), đều vượt ngưỡng 81\%; phần chênh khoảng 2
 điểm là mức lạc quan do chọn mô hình trên tập test.
 
-\textbf{Q5: con số 100\% cần được hiểu đúng.} Loss của batch cuối giảm từ 0.89
-xuống 0.053 và độ chính xác kiểm định tăng từ 84\% lên 98\% sau 5 epoch. Tuy
-nhiên tập kiểm định và kiểm tra đều lấy từ ảnh đã dùng để huấn luyện, nên 100\%
-chỉ cho thấy mô hình khớp dữ liệu huấn luyện chứ không đo được khả năng tổng
-quát hoá; đây là hạn chế của cách chia dữ liệu trong autograder. So với Q3, mô
-hình tích chập có ít tham số hơn ($87\,955$ so với $101\,770$) nhờ kernel dùng
-chung trọng số~\cite{lecun}, nhưng chậm hơn vì \texttt{Convolve} dùng vòng lặp
-Python.
+\textbf{Q5: 100\% không đo khả năng tổng quát hoá, và kernel gần như không
+học.} Độ chính xác kiểm định tăng từ 84\% lên 98\% (49/50 ảnh) sau 5 epoch, và
+mô hình đúng cả 50 ảnh kiểm tra. Tuy nhiên tập kiểm định và tập kiểm tra đều
+lấy từ ảnh mô hình đã huấn luyện, nên 100\% chỉ cho thấy mô hình khớp dữ liệu
+huấn luyện. Ngoài ra, sau huấn luyện kernel chỉ còn trong khoảng 1.05--1.10
+(Hình~\ref{fig:q5_kernel}), gần như giữ nguyên giá trị khởi tạo: lớp tích chập
+chỉ làm mờ ảnh, còn việc phân loại do MLP phía sau đảm nhận. Với một kernel,
+200 ảnh và vài epoch, lợi ích của tích chập nêu ở trên chưa thể hiện được.
 
 \textbf{Q6: kiểm tra tính đúng.} Q6 không có huấn luyện; autograder so đầu ra
 với đáp án bằng \texttt{torch.isclose}. Hai tính chất của ma trận attention là
@@ -641,7 +627,7 @@ dạng tensor để autograd hoạt động (Q5) ảnh hưởng đến kết qu�
 trúc mô hình.
 
 \textbf{Hạn chế.} \texttt{Convolve} dùng vòng lặp Python (676 lần lặp mỗi
-ảnh) và chỉ có một kernel; Q4 dùng RNN thuần và chỉ vượt ngưỡng với biên
+ảnh) và chỉ có một kernel, gần như không thay đổi sau huấn luyện; Q4 dùng RNN thuần và chỉ vượt ngưỡng với biên
 khoảng 1--3 điểm phần trăm; Q6 là attention một đầu; tập kiểm định và kiểm tra của Q5 lấy từ
 tập huấn luyện nên không đo được khả năng tổng quát hoá.
 
