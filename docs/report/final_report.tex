@@ -261,7 +261,7 @@ chắn hội tụ sau hữu hạn lần cập nhật~\cite{rosenblatt}.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=\columnwidth]{../ImagineReport/q1_fig_impl.png}
+    \includegraphics[width=\columnwidth]{figures/q1_fig_impl.png}
     \caption{Cài đặt perceptron: các bước của \texttt{train\_perceptron} (trái)
     và mã tương ứng (phải, tên biến đã rút gọn). Mỗi hộp mã nằm cùng hàng với
     bước mà nó thực hiện; hộp xanh lá là bước cập nhật trọng số.}
@@ -296,7 +296,7 @@ size 5 và 100, số epoch 100 và 1000; đây là bộ đạt ngưỡng 0.02 v�
 nhất.
 \begin{figure}[H]
     \centering
-    \includegraphics[width=\columnwidth]{../ImagineReport/q2_fig_impl.png}
+    \includegraphics[width=\columnwidth]{figures/q2_fig_impl.png}
     \caption{Cài đặt hồi quy: các bước của một batch (trái) và mã tương ứng (phải, tên biến đã rút gọn). Khung nét đứt là phần lặp 499 epoch $\times$ 20 batch; hộp xanh lá là bước cập nhật trọng số.}
     \label{fig:q2_impl}
 \end{figure}
@@ -339,7 +339,7 @@ một nửa khác của tập test MNIST, nơi độ chính xác có thể thấ
 định một chút. Khoảng dư $0.5\%$ này giúp mô hình vẫn đạt ngưỡng khi được chấm.
 \begin{figure}[H]
     \centering
-    \includegraphics[width=\columnwidth]{../ImagineReport/q3_fig_impl.png}
+    \includegraphics[width=\columnwidth]{figures/q3_fig_impl.png}
     \caption{Cài đặt bộ phân loại MNIST: một batch (trái) và mã tương ứng (phải, rút gọn). Sau mỗi epoch, độ chính xác kiểm định quyết định dừng hay chạy epoch kế tiếp.}
     \label{fig:q3_impl}
 \end{figure}
@@ -376,7 +376,7 @@ trên tập kiểm định, trọng số tốt nhất được lưu lại và n�
 và quá trình dừng sớm khi độ chính xác đạt 86\%.
 \begin{figure}[H]
     \centering
-    \includegraphics[width=\columnwidth]{../ImagineReport/q4_fig_impl.png}
+    \includegraphics[width=\columnwidth]{figures/q4_fig_impl.png}
     \caption{Cài đặt RNN nhận diện ngôn ngữ: một batch (trái) và mã tương ứng (phải; \texttt{Wx}, \texttt{Wh} là \texttt{input\_layer}, \texttt{hidden\_layer}). Khung nét đứt là vòng lặp qua các ký tự; cuối mỗi epoch lưu trọng số tốt nhất và kiểm tra điều kiện dừng.}
     \label{fig:q4_impl}
 \end{figure}
@@ -428,7 +428,7 @@ Mô hình được huấn luyện bằng mini-batch SGD ($\eta = 0.01$, batch si
 tối đa 50 epoch) cho đến khi đúng ít nhất 49/50 ảnh kiểm định ($\ge 97\%$).
 \begin{figure}[H]
     \centering
-    \includegraphics[width=\columnwidth]{../ImagineReport/q5_fig_impl.png}
+    \includegraphics[width=\columnwidth]{figures/q5_fig_impl.png}
     \caption{Cài đặt mô hình tích chập: phép tích chập viết tay (hai hàng đầu), rồi duỗi và MLP (trái), cùng mã tương ứng (phải, rút gọn). Kích thước 26 và 3 được suy ra từ \texttt{shape}.}
     \label{fig:q5_impl}
 \end{figure}
@@ -467,7 +467,7 @@ $(1, B, T, T)$ và cần lấy phần tử \texttt{[0]} để về lại $(B, T,
 trong \texttt{state\_dict} nhưng không phải tham số học được.
 \begin{figure}[H]
     \centering
-    \includegraphics[width=\columnwidth]{../ImagineReport/q6_fig_impl.png}
+    \includegraphics[width=\columnwidth]{figures/q6_fig_impl.png}
     \caption{Cài đặt self-attention có mặt nạ nhân quả: các bước của \texttt{forward} (trái) và mã tương ứng (phải, rút gọn; \texttt{mask} là mặt nạ đã đăng ký, \texttt{C} là \texttt{layer\_size}). Hộp đỏ là bước chặn thông tin từ tương lai.}
     \label{fig:q6_impl}
 \end{figure}
