@@ -1,38 +1,38 @@
 # uet-int3401
 
-INT3401_11 group project: [UC Berkeley CS188 Project 5: Machine Learning](https://inst.eecs.berkeley.edu/~cs188/archive/fa25/projects/proj5/) (PyTorch version).
+Bài tập lớn nhóm môn Trí tuệ nhân tạo INT3401_11: [UC Berkeley CS188 Project 5: Machine Learning](https://inst.eecs.berkeley.edu/~cs188/archive/fa25/projects/proj5/) (phiên bản PyTorch).
 
-We build and train neural networks with PyTorch: a perceptron, a regression network, an MNIST digit classifier, an RNN for language identification, a hand-written convolution, and causal self-attention.
+Nhóm cài đặt và huấn luyện các mạng nơ-ron bằng PyTorch: perceptron, mạng hồi quy, bộ phân loại chữ số MNIST, RNN nhận diện ngôn ngữ, phép tích chập tự cài đặt và self-attention có mặt nạ nhân quả.
 
-## Project structure
+## Cấu trúc dự án
 
 ```
-models.py        # model definitions for Q1–Q6 (our code)
-train.py         # training loops (our code)
-losses.py        # loss functions (our code)
-gpt_model.py     # character-level GPT built on the Q6 Attention
-chargpt.py       # trains and samples the GPT (needs an input.txt text file)
-autograder.py    # local grader, do not edit
-backend.py       # datasets and plotting used by the grader, do not edit
+models.py        # định nghĩa mô hình Q1–Q6 (code của nhóm)
+train.py         # vòng huấn luyện (code của nhóm)
+losses.py        # hàm mất mát (code của nhóm)
+gpt_model.py     # GPT mức ký tự dựng trên Attention của Q6
+chargpt.py       # huấn luyện và sinh văn bản với GPT (cần file input.txt)
+autograder.py    # bộ chấm cục bộ, không sửa
+backend.py       # dữ liệu và vẽ đồ thị cho bộ chấm, không sửa
 data/            # mnist.npz, lang_id.npz
-docs/sumary.md   # question summary, required knowledge, submission checklist
-docs/report/     # LaTeX report (final_report.tex)
+docs/sumary.md   # tóm tắt các bài, kiến thức cần có, yêu cầu nộp bài
+docs/report/     # báo cáo LaTeX (final_report.tex)
 ```
 
-## Questions
+## Các bài
 
-| Q | Task | Where |
-|---|------|-------|
-| Q1 | Perceptron | `PerceptronModel` in `models.py`, `train_perceptron` in `train.py` |
-| Q2 | Regression on sin(x) | `RegressionModel`, `regression_loss`, `train_regression` |
-| Q3 | MNIST digit classification | `DigitClassificationModel`, `digitclassifier_loss`, `train_digitclassifier` |
-| Q4 | Language identification (RNN) | `LanguageIDModel`, `languageid_loss`, `train_languageid` |
-| Q5 | Convolution | `Convolve`, `DigitConvolutionalModel`, `digitconvolution_Loss`, `Train_DigitConvolution` |
-| Q6 | Causal self-attention | `Attention` in `models.py` |
+| Bài | Nhiệm vụ | Vị trí |
+|-----|----------|--------|
+| Q1 | Perceptron | `PerceptronModel` trong `models.py`, `train_perceptron` trong `train.py` |
+| Q2 | Hồi quy hàm sin(x) | `RegressionModel`, `regression_loss`, `train_regression` |
+| Q3 | Phân loại chữ số MNIST | `DigitClassificationModel`, `digitclassifier_loss`, `train_digitclassifier` |
+| Q4 | Nhận diện ngôn ngữ bằng RNN | `LanguageIDModel`, `languageid_loss`, `train_languageid` |
+| Q5 | Tích chập | `Convolve`, `DigitConvolutionalModel`, `digitconvolution_Loss`, `Train_DigitConvolution` |
+| Q6 | Self-attention có mặt nạ nhân quả | `Attention` trong `models.py` |
 
-Pass conditions and required knowledge per question: [docs/sumary.md](docs/sumary.md).
+Điều kiện đạt và kiến thức cần có của từng bài: [docs/sumary.md](docs/sumary.md).
 
-## Setup
+## Cài đặt môi trường
 
 ```bash
 python -m venv .venv
@@ -40,11 +40,11 @@ source .venv/bin/activate
 pip install torch numpy matplotlib
 ```
 
-## Run
+## Chạy
 
 ```bash
-python autograder.py                  # grade all questions
-python autograder.py -q q3            # grade one question
-python autograder.py --no-graphics    # skip the matplotlib plots (faster, works over SSH)
-python chargpt.py                     # train the character GPT (place input.txt in the repo root first)
+python autograder.py                  # chấm tất cả các bài
+python autograder.py -q q3            # chấm một bài
+python autograder.py --no-graphics    # bỏ đồ thị matplotlib (nhanh hơn, chạy được qua SSH)
+python chargpt.py                     # huấn luyện GPT mức ký tự (đặt input.txt ở thư mục gốc trước)
 ```
